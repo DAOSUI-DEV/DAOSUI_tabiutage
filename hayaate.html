@@ -324,12 +324,16 @@ button{cursor:pointer;touch-action:manipulation}
     <div class="panel">
       <p class="panel-title" id="lCount">集まった人</p>
       <ul class="members" id="lMembers"></ul>
-      <p class="hint">この順番で絵を描いていくよ。</p>
+      <p class="hint" id="lPlan">この順番で絵を描いていくよ。</p>
     </div>
     <div class="panel" id="lSettings" hidden>
       <p class="panel-title">ルール設定</p>
       <div class="field"><span class="label">描く時間</span>
         <div class="seg" id="optDur"><button type="button" data-v="60">60秒</button><button type="button" data-v="90">90秒</button><button type="button" data-v="120">120秒</button></div>
+      </div>
+      <div class="field"><span class="label">1人が描く回数</span>
+        <div class="seg" id="optPer"><button type="button" data-v="1">1回</button><button type="button" data-v="2">2回</button><button type="button" data-v="3">3回</button></div>
+        <p class="hint m0">全員が同じ回数ずつ描く。5問に足りない時は自動で増やすよ。</p>
       </div>
       <div class="field"><span class="label">お題のジャンル</span>
         <div class="seg" id="optGenre"><button type="button" data-v="all">ぜんぶ</button><button type="button" data-v="basic">定番</button><button type="button" data-v="trip">旅・冬</button><button type="button" data-v="party">宴会</button><button type="button" data-v="hard">むずかしい</button></div>
@@ -343,7 +347,7 @@ button{cursor:pointer;touch-action:manipulation}
   <!-- 描く人 -->
   <section id="sDraw" class="screen" hidden>
     <div class="topline">
-      <div class="grow"><span class="eyebrow">あなたが描く番。お題は</span><strong id="dTopic">-</strong></div>
+      <div class="grow"><span class="eyebrow" id="dEye">あなたが描く番。お題は</span><strong id="dTopic">-</strong></div>
       <span class="pill timer num" id="dTimer">90</span>
     </div>
     <div class="queue" id="dQueue" hidden aria-live="polite">
@@ -368,13 +372,13 @@ button{cursor:pointer;touch-action:manipulation}
       <ul class="inbox" id="dInbox"></ul>
       <p class="empty" id="dEmpty">まだ答えは届いてないよ。</p>
     </div>
-    <button class="btn wide" id="endRoundBtn" type="button">このラウンドを終える</button>
+    <button class="btn wide" id="endRoundBtn" type="button">この問題を終える</button>
   </section>
 
   <!-- 当てる人 -->
   <section id="sGuess" class="screen" hidden>
     <div class="topline">
-      <div class="grow"><span class="eyebrow">いま描いてるのは</span><strong id="gDrawer">-</strong></div>
+      <div class="grow"><span class="eyebrow" id="gEye">いま描いてるのは</span><strong id="gDrawer">-</strong></div>
       <span class="pill timer num" id="gTimer">90</span>
     </div>
     <canvas class="board" id="gBoard" width="1000" height="1000" aria-label="描いている絵"></canvas>
@@ -396,13 +400,13 @@ button{cursor:pointer;touch-action:manipulation}
 
   <!-- ラウンド結果 -->
   <section id="sReveal" class="screen" hidden>
-    <p class="eyebrow center m0" id="rRound">ラウンド結果</p>
+    <p class="eyebrow center m0" id="rRound">結果</p>
     <p class="topic-big" id="rTopic">-</p>
     <p class="center m0 lead" id="rDrawer"></p>
     <canvas class="board" id="rBoard" width="1000" height="1000" aria-label="描いた絵"></canvas>
-    <div class="panel"><p class="panel-title">このラウンドの点数</p><ol class="ranks" id="rGain"></ol></div>
+    <div class="panel"><p class="panel-title">この問題の点数</p><ol class="ranks" id="rGain"></ol></div>
     <div class="panel"><p class="panel-title">合計</p><ol class="ranks" id="rTotal"></ol></div>
-    <button class="btn big gold" id="nextBtn" type="button" hidden>次のラウンドへ</button>
+    <button class="btn big gold" id="nextBtn" type="button" hidden>次の問題へ</button>
     <p class="notice" id="rWait" hidden>幹事が次へ進めるのを待ってね。</p>
   </section>
 
@@ -425,6 +429,10 @@ button{cursor:pointer;touch-action:manipulation}
     <div class="panel">
       <div class="field"><span class="label">描く時間</span>
         <div class="seg" id="offDur"><button type="button" data-v="60">60秒</button><button type="button" data-v="90">90秒</button><button type="button" data-v="120">120秒</button></div>
+      </div>
+      <div class="field"><span class="label">1人が描く回数</span>
+        <div class="seg" id="offPer"><button type="button" data-v="1">1回</button><button type="button" data-v="2">2回</button><button type="button" data-v="3">3回</button></div>
+        <p class="hint m0" id="offPlan"></p>
       </div>
       <div class="field"><span class="label">お題のジャンル</span>
         <div class="seg" id="offGenre"><button type="button" data-v="all">ぜんぶ</button><button type="button" data-v="basic">定番</button><button type="button" data-v="trip">旅・冬</button><button type="button" data-v="party">宴会</button><button type="button" data-v="hard">むずかしい</button></div>
@@ -459,7 +467,7 @@ button{cursor:pointer;touch-action:manipulation}
       <div class="tapnames" id="odNames"></div>
       <button class="btn sm ghost" id="odUndoTap" type="button">最後のタップを取り消す</button>
     </div>
-    <button class="btn wide" id="odEnd" type="button">このラウンドを終える</button>
+    <button class="btn wide" id="odEnd" type="button">この問題を終える</button>
   </section>
 
   <!-- 回答ボード -->
@@ -794,8 +802,14 @@ const TOPICS = {
 };
 const COLORS = [['#1d1d1f','黒'],['#e0352b','赤'],['#2563d9','青'],['#24964a','緑'],['#f5c518','黄'],['#8b5a2b','茶'],['#f06ba8','ピンク']];
 const BATSU = ['一発ギャグを1つ','変顔で写真を1枚撮られる','次のゲームの進行役','好きなタイプを発表','明日の朝いちばんにみんなを起こす係','モノマネを1つ','今年いちばん恥ずかしかった話をする','みんなの写真係（10分）'];
-const PTS = k => [5, 4, 3][k] ?? 2;   // 当てた順の点数
-const DRAWER_PER = 1;                 // 描いた人は当てた人数×1点
+const PTS = k => [5, 4, 3][k] ?? 2;   // 当てた順の点数（描いた人は点数なし）
+const MIN_Q = 5;                      // 1ゲームのお題は最低5問
+/* 全員が同じ回数ずつ描く（描く人は点が入らないので、回数をそろえて不公平をなくす）。
+   人数が少なくて5問に届かない時は、1人の回数を増やす。例：2人→3回ずつ6問、3〜4人→2回ずつ */
+const perEach = (n, want) => Math.max(+want || 1, Math.ceil(MIN_Q / Math.max(1, n)));
+const totalQ = st => st.players.length * perEach(st.players.length, st.settings && st.settings.per);
+const qIndex = st => st.round - (st.base || 0);
+const qLabel = st => (qIndex(st) + 1) + '問目 / 全' + totalQ(st) + '問';
 const params = new URLSearchParams(location.search);
 const TEST_BROKER = params.get('broker');
 /* 通信の中継（無料の公開サーバー）。つながった所を部屋の番号の最後の1文字に入れる */
@@ -949,7 +963,7 @@ function hostPresence(id, txt) {
 function hostStart() {
   if (S.players.length < 2) { toast('2人以上集まったらスタートできるよ'); return; }
   S.scores = Object.fromEntries(S.players.map(p => [p.id, S.scores && S.scores[p.id] || 0]));
-  S.round = 0; S.used = S.used || [];
+  S.round = 0; S.base = 0; S.used = S.used || [];
   startRound();
 }
 function startRound() {
@@ -970,7 +984,6 @@ function hostCtl(m) { if (m && m.cmd === 'end' && S && S.phase === 'draw' && m.r
 function endRound() {
   const gains = {};
   S.correct.forEach((id, k) => { gains[id] = PTS(k); });
-  gains[S.drawer] = S.correct.length * DRAWER_PER;
   S.players.forEach(p => { S.scores[p.id] = (S.scores[p.id] || 0) + (gains[p.id] || 0); });
   S.last = { rid: S.rid, topic: S.topic, drawer: S.drawer, correct: S.correct.slice(), gains };
   S.phase = 'reveal'; S.left = 0;
@@ -979,7 +992,7 @@ function endRound() {
 }
 function hostNext() {
   S.round++;
-  if (S.round % S.players.length === 0) { S.phase = 'final'; publishState(); return; }
+  if (qIndex(S) >= totalQ(S)) { S.phase = 'final'; publishState(); return; }
   startRound();
 }
 setInterval(() => {
@@ -1022,12 +1035,14 @@ function render() {
 
 /* 待合室 */
 const shareLink = () => location.href.split('#')[0].split('?')[0] + '?openExternalBrowser=1#' + ROOM;
-let segDur = null, segGenre = null;
+let segDur = null, segGenre = null, segPer = null;
 function renderLobby() {
   $('#lCode').textContent = ROOM;
   $('#lShare').hidden = !isHost;
   $('#lLink').value = '【早当てお絵かき】部屋の番号 ' + ROOM + '\n' + shareLink();
   $('#lCount').textContent = '集まった人（' + S.players.length + '人）';
+  const n = S.players.length, want = +(S.settings.per || 1), per = perEach(n, want);
+  $('#lPlan').textContent = n < 2 ? 'この順番で絵を描いていくよ。' : 'この順番で描いていくよ。全部で ' + (n * per) + '問（1人 ' + per + '回ずつ描く）' + (per > want ? '。5問に足りないから回数を増やしてるよ' : '');
   const ul = $('#lMembers'); ul.textContent = '';
   S.players.forEach(p => ul.append(h('li', { class: p.id === me.id ? 'me' : '' },
     p.id === S.host ? h('span', { class: 'tag-host' }, '幹事') : null, p.name,
@@ -1037,17 +1052,18 @@ function renderLobby() {
   $('#startBtn').disabled = S.players.length < 2;
   $('#startBtn').textContent = S.players.length < 2 ? 'あと1人以上集まったらスタートできる' : 'スタート（最初に描くのは ' + S.players[0].name + '）';
   $('#lWait').hidden = isHost;
-  if (isHost) { segDur(String(S.settings.dur)); segGenre(S.settings.genre); }
+  if (isHost) { segDur(String(S.settings.dur)); segGenre(S.settings.genre); segPer(String(S.settings.per || 1)); }
 }
 segDur = bindSeg($('#optDur'), '90', v => { if (isHost && S) { S.settings.dur = +v; publishState(); } });
 segGenre = bindSeg($('#optGenre'), 'all', v => { if (isHost && S) { S.settings.genre = v; publishState(); } });
+segPer = bindSeg($('#optPer'), '1', v => { if (isHost && S) { S.settings.per = +v; publishState(); } });
 $('#lShareBtn').addEventListener('click', () => shareText($('#lLink').value, $('#lLink')));
 $('#lCopyBtn').addEventListener('click', () => copyText($('#lLink').value, $('#lLink')));
 $('#startBtn').addEventListener('click', () => { Sound.pop(); hostStart(); });
 $('#leaveBtn').addEventListener('click', async () => {
   if (!(await ask(isHost ? '部屋を閉じる？みんなも遊べなくなるよ' : '部屋を出る？', { ok: '出る', danger: true }))) return;
   pub('p/' + me.id, null, { retain: true, qos: 1 });
-  if (isHost) { pub('state', null, { retain: true, qos: 1 }); store.del('tabi.hayaate.hoststate'); }
+  if (isHost) { pub('state', null, { retain: true, qos: 1 }); pub('canvas', null, { retain: true, qos: 1 }); store.del('tabi.hayaate.hoststate'); }
   store.del('tabi.hayaate.session');
   setTimeout(() => location.href = location.href.split('#')[0], 300);
 });
@@ -1085,9 +1101,10 @@ $('#clearAll').addEventListener('click', async () => {
 });
 $('#endRoundBtn').addEventListener('click', async () => {
   if (!iAmDrawing()) return;
-  if (await ask('このラウンドを終わりにする？まだ当ててない人は0点になるよ', { ok: '終える' })) pub('ctl', { cmd: 'end', r: S.rid }, { qos: 1 });
+  if (await ask('この問題を終わりにする？まだ当ててない人は0点になるよ', { ok: '終える' })) pub('ctl', { cmd: 'end', r: S.rid }, { qos: 1 });
 });
 function renderDraw() {
+  $('#dEye').textContent = qLabel(S) + '　あなたが描く番。お題は';
   $('#dTopic').textContent = S.topic;
   const others = S.players.length - 1;
   $('#dCount').textContent = '正解 ' + S.correct.length + ' / ' + others + '人';
@@ -1155,6 +1172,7 @@ function onCanvas(m) {
   rBoard.load(m.s);
 }
 function renderGuess() {
+  $('#gEye').textContent = qLabel(S) + '　いま描いてるのは';
   $('#gDrawer').textContent = nameOf(S.drawer);
   const k = S.correct.indexOf(me.id);
   const won = k >= 0 || myGuesses.some(g => g.st === 'ok');
@@ -1201,18 +1219,17 @@ setInterval(() => {
 /* ラウンド結果 */
 function renderReveal() {
   const L = S.last || {};
-  $('#rRound').textContent = 'ラウンド ' + ((S.round % S.players.length) + 1) + ' / ' + S.players.length;
+  $('#rRound').textContent = qLabel(S);
   $('#rTopic').textContent = 'お題は「' + (L.topic || '') + '」';
   $('#rDrawer').textContent = nameOf(L.drawer) + ' の絵';
   if (S.drawer === me.id) rBoard.load(dBoard.dump()); else if (gBoard.strokes.length >= rBoard.strokes.length) rBoard.load(gBoard.dump());
   const gain = $('#rGain'); gain.textContent = '';
   (L.correct || []).forEach((id, k) => gain.append(h('li', {}, h('span', { class: 'pos' }, (k + 1) + '番'), h('span', { class: 'nm' }, nameOf(id)), h('span', { class: 'sc' }, '+' + PTS(k)))));
-  gain.append(h('li', {}, h('span', { class: 'pos' }, '描'), h('span', { class: 'nm' }, nameOf(L.drawer)), h('span', { class: 'sc' }, '+' + ((L.gains || {})[L.drawer] || 0))));
   S.players.filter(p => p.id !== L.drawer && !(L.correct || []).includes(p.id)).forEach(p => gain.append(h('li', { class: 'miss' }, h('span', { class: 'pos' }, '-'), h('span', { class: 'nm' }, p.name), h('span', { class: 'sc' }, '0'))));
   renderScores($('#rTotal'), L.gains);
-  const last = (S.round + 1) % S.players.length === 0;
+  const last = qIndex(S) + 1 >= totalQ(S);
   $('#nextBtn').hidden = !isHost;
-  $('#nextBtn').textContent = last ? '最終結果へ' : '次のラウンドへ（次は ' + S.players[(S.round + 1) % S.players.length].name + ' が描く）';
+  $('#nextBtn').textContent = last ? '最終結果へ' : '次の問題へ（次は ' + S.players[(S.round + 1) % S.players.length].name + ' が描く）';
   $('#rWait').hidden = isHost;
 }
 function rankRows() {
@@ -1236,10 +1253,10 @@ function renderFinal() {
   $('#fBatsu').textContent = '罰ゲームは ' + bottom.join('、') + '：' + pick(BATSU);
   $('#againBtn').hidden = !isHost; $('#resetBtn').hidden = !isHost; $('#fWait').hidden = isHost; $('#fHome').hidden = true;
 }
-$('#againBtn').addEventListener('click', () => { if (!isHost) return; startRound(); });
+$('#againBtn').addEventListener('click', () => { if (!isHost) return; S.base = S.round; startRound(); });
 $('#resetBtn').addEventListener('click', async () => {
   if (!isHost || !(await ask('点数をリセットして、待合室にもどる？', { ok: 'リセット' }))) return;
-  S.scores = {}; S.round = 0; S.phase = 'lobby'; S.rid = null; S.last = null; publishState();
+  S.scores = {}; S.round = 0; S.base = 0; S.phase = 'lobby'; S.rid = null; S.last = null; publishState();
 });
 
 /* ===== 部屋を作る・入る ===== */
@@ -1255,7 +1272,7 @@ async function createRoom() {
   $('#createBtn').disabled = false;
   if (!client) { st.className = 'status ng'; st.textContent = 'つながらなかった。電波を確認してもう一度。ダメなら「ネットなしで遊ぶ」で遊べるよ'; return; }
   P = topicBase(ROOM); isHost = true;
-  S = { v: 1, host: me.id, phase: 'lobby', players: [{ id: me.id, name: me.name }], settings: { dur: 90, genre: 'all' }, round: 0, scores: {}, used: [], correct: [] };
+  S = { v: 1, host: me.id, phase: 'lobby', players: [{ id: me.id, name: me.name }], settings: { dur: 90, genre: 'all', per: 1 }, round: 0, base: 0, scores: {}, used: [], correct: [] };
   store.set('tabi.hayaate.session', { room: ROOM });
   setupClient(); announce(); publishState();
   Sound.fanfare();
@@ -1312,9 +1329,16 @@ function home() {
 /* ===== ネットなしモード ===== */
 let O = null;
 const offEditor = PlayerEditor($('#offPlayers'), { def: 10, min: 2, max: 16, idPrefix: 'op' });
-const offOpts = Object.assign({ dur: '90', genre: 'all' }, store.get('tabi.hayaate.offopts', {}));
+const offOpts = Object.assign({ dur: '90', genre: 'all', per: '1' }, store.get('tabi.hayaate.offopts', {}));
 bindSeg($('#offDur'), offOpts.dur, v => { offOpts.dur = v; store.set('tabi.hayaate.offopts', offOpts); });
 bindSeg($('#offGenre'), offOpts.genre, v => { offOpts.genre = v; store.set('tabi.hayaate.offopts', offOpts); });
+function offPlan() {
+  const n = offEditor.list.length, per = perEach(n, offOpts.per);
+  $('#offPlan').textContent = '全部で ' + (n * per) + '問（' + n + '人が ' + per + '回ずつ描く）' + (per > +offOpts.per ? '。5問に足りないから回数を増やしてるよ' : '');
+}
+bindSeg($('#offPer'), offOpts.per, v => { offOpts.per = v; store.set('tabi.hayaate.offopts', offOpts); offPlan(); });
+$('#offPlayers').addEventListener('click', offPlan);
+offPlan();
 const oBoard = new Board($('#oBoard'));
 const oTools = { color: COLORS[0][0], size: 16, eraser: false };
 makeDrawable(oBoard, { enabled: () => !$('#sOffDraw').hidden, get: () => oTools }, null, null, null);
@@ -1325,7 +1349,7 @@ let oTimer = null;
 $('#goOffline').addEventListener('click', () => show('sOffSetup'));
 $('#offStart').addEventListener('click', () => {
   const names = offEditor.list;
-  O = { players: names.map((n, i) => ({ id: 'o' + i, name: n })), round: 0, scores: {}, used: [], dur: +offOpts.dur, genre: offOpts.genre };
+  O = { players: names.map((n, i) => ({ id: 'o' + i, name: n })), round: 0, scores: {}, used: [], dur: +offOpts.dur, genre: offOpts.genre, per: +offOpts.per };
   O.players.forEach(p => { O.scores[p.id] = 0; });
   offHand();
 });
@@ -1354,15 +1378,14 @@ function renderOffNames() {
   });
 }
 $('#odUndoTap').addEventListener('click', () => { O.correct.pop(); renderOffNames(); });
-$('#odEnd').addEventListener('click', async () => { if (await ask('このラウンドを終える？', { ok: '終える' })) offEnd(); });
+$('#odEnd').addEventListener('click', async () => { if (await ask('この問題を終える？', { ok: '終える' })) offEnd(); });
 function offEnd() {
   oTimer && oTimer.stop();
   const gains = {};
   O.correct.forEach((id, k) => { gains[id] = PTS(k); });
-  gains[O.drawer] = O.correct.length * DRAWER_PER;
   Object.keys(gains).forEach(id => { O.scores[id] += gains[id]; });
   // 結果画面は通信版と同じものを使う
-  S = { players: O.players, scores: O.scores, round: O.round, drawer: O.drawer, last: { topic: O.topic, drawer: O.drawer, correct: O.correct.slice(), gains }, phase: 'reveal' };
+  S = { players: O.players, scores: O.scores, round: O.round, base: 0, settings: { per: O.per }, drawer: O.drawer, last: { topic: O.topic, drawer: O.drawer, correct: O.correct.slice(), gains }, phase: 'reveal' };
   isHost = true;
   rBoard.load(oBoard.dump());
   show('sReveal'); renderRevealOffline();
@@ -1371,7 +1394,7 @@ function offEnd() {
 function renderRevealOffline() { renderReveal(); rBoard.load(oBoard.dump()); }
 function offNext() {
   O.round++;
-  if (O.round % O.players.length === 0) { S.phase = 'final'; show('sFinal'); renderFinal(); $('#againBtn').hidden = true; $('#resetBtn').hidden = true; $('#fWait').hidden = true; $('#fHome').hidden = false; return; }
+  if (O.round >= O.players.length * perEach(O.players.length, O.per)) { S.phase = 'final'; show('sFinal'); renderFinal(); $('#againBtn').hidden = true; $('#resetBtn').hidden = true; $('#fWait').hidden = true; $('#fHome').hidden = false; return; }
   offHand();
 }
 $('#fHome').addEventListener('click', () => { O = null; S = null; isHost = false; home(); });
@@ -1393,12 +1416,13 @@ $('#helpBtn').addEventListener('click', () => sheet('早当てお絵かきのル
 <li>描く人のスマホにだけお題が出る。描いた絵は、全員のスマホにリアルタイムで映る。</li>
 <li>当てる人は答えを入力して「送る」。何回でも送れる。</li>
 <li>描く人に答えが届くので、合ってたら◯、ちがったら×を押す。◯になった人はそこで抜ける。</li>
-<li>全員が当てるか、時間切れでラウンド終了。描く人を交代して、全員が1回ずつ描いたら最終結果。</li>
+<li>全員が当てるか、時間切れで1問終わり。描く人を順番に交代していく。</li>
+<li>全員が同じ回数ずつ描く。幹事が「1人が描く回数」（1〜3回）を決める。最低でも5問はやるので、人数が少ない時は自動で回数が増える（2人なら3回ずつで6問、3〜4人なら2回ずつ）。</li>
 </ul>
 <h3>点数</h3>
 <ul>
 <li>当てた順に 1番 5点、2番 4点、3番 3点、4番から 2点。当てられなかったら 0点。</li>
-<li>描いた人は「当てた人数 × 1点」。伝わる絵を描くほど得。</li>
+<li>描いた人には点数が入らない。全員が同じ回数描くから、不公平にはならないよ。</li>
 <li>合計点が一番低い人が罰ゲーム。</li>
 </ul>
 <h3>注意</h3>
