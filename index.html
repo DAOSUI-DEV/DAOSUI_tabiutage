@@ -1,0 +1,610 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="旅宴ゲーム">
+<meta name="theme-color" content="#1d2d5c">
+<title>旅宴ゲーム</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* 旅宴ゲーム 共通スタイル
+   旅館の夜：藍の浴衣 × 生ビールの金 × 木札。
+   レイアウト：上に細いヘッダー、中央にゲーム、下に親指で押せる大きな操作ボタン */
+:root{
+  --bg:#eef0f6;
+  --surface:#ffffff;
+  --surface-2:#e3e7f2;
+  --fg:#151c36;
+  --muted:#59627f;
+  --line:#c9cfe2;
+  --ai:#22356b;
+  --on-ai:#ffffff;
+  --gold:#e3a20d;
+  --gold-soft:#fbecc2;
+  --on-gold:#2b1d00;
+  --wood:#ead8b3;
+  --wood-edge:#c4a46c;
+  --on-wood:#2a2014;
+  --primary:#22356b;
+  --on-primary:#ffffff;
+  --good:#17804f;
+  --good-soft:#d9f2e5;
+  --bad:#c3352b;
+  --bad-soft:#fbe1de;
+  --head-bg:#1d2d5c;
+  --head-fg:#f3f5fb;
+  --scrim:rgba(13,20,48,.55);
+  --paper:#ffffff;
+  --shadow:0 1px 2px rgba(21,28,54,.08),0 8px 24px rgba(21,28,54,.08);
+  --f-display:"Dela Gothic One","Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP","Noto Sans CJK JP",sans-serif;
+  --f-body:"Hiragino Maru Gothic ProN","Zen Maru Gothic","Hiragino Sans","Noto Sans JP","Noto Sans CJK JP",system-ui,sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1430;--surface:#162047;--surface-2:#1f2b5a;--fg:#eef1fb;--muted:#a2abc9;--line:#2e3c74;
+    --ai:#9db1f0;--on-ai:#0b1230;--gold:#f4bb2a;--gold-soft:#3b300f;--on-gold:#1f1500;
+    --wood:#3d3323;--wood-edge:#6a5534;--on-wood:#f4e7cc;--primary:#9db1f0;--on-primary:#0b1230;
+    --good:#43c98e;--good-soft:#123a2a;--bad:#ff7466;--bad-soft:#47201d;--head-bg:#0a1026;--head-fg:#eef1fb;
+    --scrim:rgba(0,0,0,.6);--paper:#ffffff;--shadow:none;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d1430;--surface:#162047;--surface-2:#1f2b5a;--fg:#eef1fb;--muted:#a2abc9;--line:#2e3c74;
+  --ai:#9db1f0;--on-ai:#0b1230;--gold:#f4bb2a;--gold-soft:#3b300f;--on-gold:#1f1500;
+  --wood:#3d3323;--wood-edge:#6a5534;--on-wood:#f4e7cc;--primary:#9db1f0;--on-primary:#0b1230;
+  --good:#43c98e;--good-soft:#123a2a;--bad:#ff7466;--bad-soft:#47201d;--head-bg:#0a1026;--head-fg:#eef1fb;
+  --scrim:rgba(0,0,0,.6);--paper:#ffffff;--shadow:none;color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.6;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--head-bg)}
+[hidden]{display:none!important}
+img{max-width:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+/* ヘッダー */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;align-items:center;gap:8px;min-height:52px;background:var(--head-bg);color:var(--head-fg);padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));border-bottom:3px solid var(--gold)}
+.bar-title{flex:1;margin:0;font-family:var(--f-display);font-weight:400;font-size:19px;letter-spacing:.04em;line-height:1.2;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-back,.bar-btn{flex:0 0 auto;min-width:64px;min-height:36px;display:inline-flex;align-items:center;justify-content:center;padding:4px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.28);background:transparent;color:var(--head-fg);font-size:13px;text-decoration:none}
+.bar-back::before{content:"";width:8px;height:8px;border-left:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin-right:6px}
+
+/* 本体 */
+.wrap{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 40px}
+.screen{display:flex;flex-direction:column;gap:16px}
+.fill-app{height:100%;display:flex;flex-direction:column}
+.fill-app .wrap{flex:1;min-height:0;width:100%;display:flex;flex-direction:column}
+.fill-app .screen.fill{flex:1;min-height:0}
+
+.eyebrow{margin:0;font-size:12px;letter-spacing:.14em;color:var(--muted);font-weight:700}
+.h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:24px;line-height:1.3;text-wrap:balance}
+.h3{margin:0;font-size:17px;font-weight:700;line-height:1.4}
+.lead{margin:0;color:var(--muted);font-size:15px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.center{text-align:center}
+.num{font-variant-numeric:tabular-nums}
+.stack{display:flex;flex-direction:column;gap:10px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row > *{min-width:0}
+.spacer{flex:1}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px}
+.panel-title{margin:0;font-size:14px;font-weight:700;color:var(--muted);letter-spacing:.06em}
+
+/* ボタン */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:10px 18px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font-weight:700;font-size:16px;line-height:1.3;text-align:center;text-decoration:none;user-select:none;-webkit-user-select:none;transition:transform .08s ease,filter .15s ease}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.45;pointer-events:none}
+.btn.primary{background:var(--primary);color:var(--on-primary);border-color:transparent}
+.btn.gold{background:var(--gold);color:var(--on-gold);border-color:transparent}
+.btn.danger{background:var(--bad);color:#fff;border-color:transparent}
+.btn.ghost{background:transparent}
+.btn.big{width:100%;min-height:60px;font-size:18px;border-radius:16px}
+.btn.wide{width:100%}
+.btn.sm{min-height:36px;padding:6px 12px;font-size:14px;border-radius:10px}
+.actions{display:flex;flex-direction:column;gap:10px}
+
+/* 入力 */
+.field{display:flex;flex-direction:column;gap:6px}
+.field > label,.label{font-size:14px;font-weight:700}
+.input,.textarea{width:100%;min-height:48px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:17px;line-height:1.5}
+.textarea{min-height:110px;resize:vertical;font-size:15px;word-break:break-all}
+.input:focus,.textarea:focus{border-color:var(--ai);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--ai) 25%,transparent)}
+.hint{margin:0;font-size:13px;color:var(--muted)}
+
+/* セグメント */
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{flex:1 1 auto;min-height:42px;padding:6px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-size:15px;font-weight:700;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ai);border-color:var(--ai);color:var(--on-ai)}
+
+/* 人数ステッパー */
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.stepper button{width:48px;height:44px;border:0;background:transparent;font-size:22px;font-weight:700}
+.stepper output{min-width:56px;text-align:center;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.names{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.name-in{min-width:0;display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding-left:10px}
+.name-in span{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:1.4em}
+.name-in input{flex:1;min-width:0;width:100%;border:0;background:transparent;min-height:42px;font-size:16px;padding:4px 8px 4px 0}
+.name-in input:focus{outline:none}
+.name-in:focus-within{border-color:var(--ai)}
+
+/* ピル・バッジ */
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;background:var(--surface-2);font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.pill.gold{background:var(--gold);color:var(--on-gold)}
+.pill.warn{background:var(--bad);color:#fff}
+.tag{display:inline-block;padding:2px 8px;border-radius:6px;background:var(--gold-soft);color:var(--fg);font-size:12px;font-weight:700}
+
+/* 大きな名前表示 */
+.big-name{font-family:var(--f-display);font-weight:400;font-size:clamp(34px,11vw,52px);line-height:1.2;text-align:center;word-break:break-all;margin:0}
+
+/* モーダル */
+.modal{position:fixed;inset:0;z-index:50;background:var(--scrim);display:flex;align-items:flex-end;justify-content:center;padding:16px;padding-bottom:max(16px,env(safe-area-inset-bottom,0px))}
+.modal-card{width:100%;max-width:520px;max-height:85vh;overflow:auto;background:var(--surface);color:var(--fg);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px;animation:rise .18s ease-out}
+.modal-msg{margin:0;font-size:17px;line-height:1.6;white-space:pre-wrap}
+.modal-actions{display:flex;gap:10px}
+.modal-actions .btn{flex:1}
+.rules h3{margin:8px 0 0;font-size:16px}
+.rules p,.rules ul,.rules ol{margin:0;font-size:15px}
+.rules ul,.rules ol{padding-left:1.3em}
+.rules li+li{margin-top:4px}
+@keyframes rise{from{transform:translateY(16px);opacity:.4}to{transform:none;opacity:1}}
+
+/* トースト */
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);z-index:60;max-width:calc(100% - 32px);padding:10px 16px;border-radius:12px;background:var(--fg);color:var(--bg);font-size:14px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* コード表示 */
+.code-box{font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.4;min-height:84px;max-height:140px;word-break:break-all}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+
+/* トップ：店の壁に木札のお品書きが下がっている構成 */
+:root{--board:#1d2d5c;--board-line:#2e437f;--string:#e3a20d}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--board:#0a1026;--board-line:#1c2a5a;--string:#f4bb2a}}
+:root[data-theme="dark"]{--board:#0a1026;--board-line:#1c2a5a;--string:#f4bb2a}
+.m0{margin:0}
+.board{background:var(--board);color:var(--head-fg);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:28px 34px;border-bottom:4px solid var(--gold);background-image:repeating-linear-gradient(90deg,transparent 0 23px,var(--board-line) 23px 24px)}
+.board-inner{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.board .eyebrow{color:var(--gold);margin:0}
+.title{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(40px,13vw,60px);line-height:1.05;letter-spacing:.04em}
+.board .lead{color:var(--head-fg);opacity:.86;max-width:32em}
+.menu{position:relative;display:flex;flex-direction:row-reverse;gap:10px;justify-content:space-between;padding-top:18px}
+.menu::before{content:"";position:absolute;left:-4px;right:-4px;top:6px;height:3px;border-radius:2px;background:var(--string)}
+.fuda{position:relative;flex:1 1 0;min-width:0;max-width:110px;height:292px;display:flex;flex-direction:column;align-items:center;gap:10px;padding:28px 4px 12px;border-radius:6px 6px 10px 10px;background:var(--wood);color:var(--on-wood);text-decoration:none;box-shadow:inset 0 0 0 2px var(--wood-edge),0 8px 0 -2px rgba(0,0,0,.18);transform-origin:50% -12px;transition:transform .2s ease}
+.fuda::before{content:"";position:absolute;top:-12px;left:50%;width:2px;height:16px;background:var(--string);transform:translateX(-50%)}
+.fuda::after{content:"";position:absolute;top:8px;left:50%;width:9px;height:9px;border-radius:50%;background:var(--board);transform:translateX(-50%);box-shadow:inset 0 0 0 2px var(--wood-edge)}
+.fuda:nth-child(odd){transform:rotate(-1.4deg)}
+.fuda:nth-child(even){transform:rotate(1.2deg)}
+.fuda:active{transform:rotate(0) translateY(2px)}
+.fuda-name{writing-mode:vertical-rl;text-orientation:mixed;font-family:var(--f-display);font-size:clamp(19px,6vw,25px);line-height:1;letter-spacing:.06em;flex:1;min-height:0;white-space:nowrap}
+.fuda-price{flex:0 0 auto;font-size:13px;font-weight:700;letter-spacing:.1em;padding:3px 8px;border-radius:4px;background:var(--surface);color:var(--fg);opacity:.92;white-space:nowrap}
+@media (prefers-reduced-motion: reduce){.fuda{transform:none!important}}
+
+.sec{margin:0;font-family:var(--f-display);font-weight:400;font-size:22px;line-height:1.3;display:flex;align-items:center;gap:10px}
+.sec::after{content:"";flex:1;height:1px;background:var(--line)}
+.games{display:flex;flex-direction:column;gap:12px}
+.game{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:10px}
+.game-top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.game h3{margin:0;font-size:20px;font-weight:700}
+.game p{margin:0;font-size:15px;line-height:1.6}
+.metas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 12px;margin:0}
+.metas div{display:flex;flex-direction:column;line-height:1.35;min-width:0}
+.metas dt{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.08em}
+.metas dd{margin:0;font-size:14px;font-weight:700}
+.kind{font-size:12px;font-weight:700;padding:2px 8px;border-radius:6px;background:var(--surface-2);color:var(--muted)}
+.kind.each{background:var(--gold-soft);color:var(--fg)}
+.flow{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.flow li{display:grid;grid-template-columns:6.2em minmax(0,1fr);gap:12px;padding:10px 0;border-bottom:1px dashed var(--line)}
+.flow li:last-child{border-bottom:0}
+.flow .when{font-size:13px;font-weight:700;color:var(--muted);padding-top:2px}
+.flow .what{font-size:15px;line-height:1.55}
+.flow .what b{display:block;font-size:16px}
+.tips{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.6}
+.foot{text-align:center;color:var(--muted);font-size:12px;padding-bottom:12px}
+</style>
+<style data-gh>body::before{background:var(--board)}</style>
+</head>
+<body>
+<header class="board">
+  <div class="board-inner">
+    <p class="eyebrow">旅先の宴会であそぶ</p>
+    <h1 class="title">旅宴ゲーム</h1>
+    <p class="lead m0">iPhoneのブラウザだけで遊べる5つのゲーム。アプリのインストールも、ログインもいらないよ。</p>
+    <nav class="menu" aria-label="ゲームのお品書き">
+      <a class="fuda" href="quiz.html"><span class="fuda-name">身内クイズ</span><span class="fuda-price">各自</span></a>
+      <a class="fuda" href="mission.html"><span class="fuda-name">秘密ミッション</span><span class="fuda-price">各自</span></a>
+      <a class="fuda" href="hayaate.html"><span class="fuda-name">早当てお絵かき</span><span class="fuda-price">各自</span></a>
+      <a class="fuda" href="oekaki.html"><span class="fuda-name">お絵かき伝言</span><span class="fuda-price">一台</span></a>
+      <a class="fuda" href="beer.html"><span class="fuda-name">こぼすなビール</span><span class="fuda-price">一台</span></a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="screen" style="gap:28px">
+    <section class="stack" style="gap:12px" aria-labelledby="h-games">
+      <h2 class="sec" id="h-games">遊べるゲーム</h2>
+      <div class="games">
+        <article class="game">
+          <div class="game-top"><h3>身内クイズ</h3><span class="kind each">全員が自分のスマホ</span></div>
+          <p>事前アンケートの答えから「実はトマトが苦手なのは誰？」みたいなクイズを自動で作る。早く正解するほど高得点。</p>
+          <dl class="metas"><div><dt>人数</dt><dd>4〜16人</dd></div><div><dt>時間</dt><dd>15〜25分</dd></div><div><dt>準備</dt><dd>前日までにアンケート</dd></div><div><dt>おすすめ</dt><dd>宴会の前半</dd></div></dl>
+          <a class="btn primary" href="quiz.html">身内クイズをひらく</a>
+        </article>
+        <article class="game">
+          <div class="game-top"><h3>秘密ミッション</h3><span class="kind each">全員が自分のスマホ</span></div>
+          <p>1人3つの秘密の指令をバレずにこなす。怪しい人を告発してミッションを当てれば、自分の得点になる。</p>
+          <dl class="metas"><div><dt>人数</dt><dd>3〜16人</dd></div><div><dt>時間</dt><dd>宴会のあいだずっと</dd></div><div><dt>準備</dt><dd>乾杯前にコードを配る</dd></div><div><dt>おすすめ</dt><dd>乾杯〜最後まで</dd></div></dl>
+          <a class="btn primary" href="mission.html">秘密ミッションをひらく</a>
+        </article>
+        <article class="game">
+          <div class="game-top"><h3>早当てお絵かき</h3><span class="kind each">全員が自分のスマホ・ネット必要</span></div>
+          <p>1人が描く絵が、全員のスマホにリアルタイムで映る。答えを入力して送ると描く人が◯か×をつけて、当てた人から抜けていく。早く当てるほど高得点。</p>
+          <dl class="metas"><div><dt>人数</dt><dd>3〜16人</dd></div><div><dt>時間</dt><dd>1人あたり2分くらい</dd></div><div><dt>準備</dt><dd>幹事が部屋を作ってリンクを送る</dd></div><div><dt>おすすめ</dt><dd>宴会の中盤</dd></div></dl>
+          <a class="btn primary" href="hayaate.html">早当てお絵かきをひらく</a>
+        </article>
+        <article class="game">
+          <div class="game-top"><h3>お絵かき伝言</h3><span class="kind">スマホ1台を回す</span></div>
+          <p>絵と言葉で交互にお題を伝えていく。最後にお題からどこまでズレたかを、1枚ずつめくって全員で見る。</p>
+          <dl class="metas"><div><dt>人数</dt><dd>3〜16人</dd></div><div><dt>時間</dt><dd>1周10〜15分</dd></div><div><dt>準備</dt><dd>なし</dd></div><div><dt>おすすめ</dt><dd>宴会の中盤</dd></div></dl>
+          <a class="btn primary" href="oekaki.html">お絵かき伝言をひらく</a>
+        </article>
+        <article class="game">
+          <div class="game-top"><h3>こぼすなビール</h3><span class="kind">スマホ1台を回す</span></div>
+          <p>スマホをお盆みたいに水平に持って、画面のジョッキをこぼさず隣へ渡す。一番こぼした人が罰ゲーム。</p>
+          <dl class="metas"><div><dt>人数</dt><dd>2〜16人</dd></div><div><dt>時間</dt><dd>1周5〜10分</dd></div><div><dt>準備</dt><dd>Safariで直接ひらく</dd></div><div><dt>おすすめ</dt><dd>締めの一発</dd></div></dl>
+          <a class="btn primary" href="beer.html">こぼすなビールをひらく</a>
+        </article>
+      </div>
+    </section>
+
+    <section class="stack" style="gap:8px" aria-labelledby="h-flow">
+      <h2 class="sec" id="h-flow">当日の流れ（例）</h2>
+      <ol class="flow">
+        <li><span class="when">出発の前</span><span class="what"><b>身内クイズのアンケート</b>全員が答えて、回答コードを幹事に送る。幹事はクイズを作っておく。</span></li>
+        <li><span class="when">乾杯の前</span><span class="what"><b>秘密ミッションを配る</b>参加コードをLINEに送って、みんな自分の名前で参加。</span></li>
+        <li><span class="when">宴会の前半</span><span class="what"><b>身内クイズ</b>参加コードを送ってスタート。12問で20分くらい。</span></li>
+        <li><span class="when">宴会の中盤</span><span class="what"><b>早当てお絵かき か お絵かき伝言</b>電波が良ければ早当て、弱ければスマホ1台で回すお絵かき伝言。</span></li>
+        <li><span class="when">締め</span><span class="what"><b>こぼすなビール</b>一番こぼした人が罰ゲーム。</span></li>
+        <li><span class="when">最後</span><span class="what"><b>秘密ミッションの答え合わせ</b>全員のミッションを発表して、ランキング発表。</span></li>
+      </ol>
+    </section>
+
+    <section class="stack" style="gap:10px" aria-labelledby="h-tips">
+      <h2 class="sec" id="h-tips">うまく遊ぶコツ</h2>
+      <ul class="tips">
+        <li>宿に着く前に、全部のゲームを一度ひらいておく。そのあとは電波が弱くても動くよ。</li>
+        <li>Safariの共有ボタンから「ホーム画面に追加」しておくと、アプリみたいにすぐ開ける。</li>
+        <li>メンバーの名前は一度入れると、ほかのゲームにも引きつがれる。</li>
+        <li>こぼすなビールの傾きセンサーは、Safariで直接ひらいた時だけ使える。</li>
+        <li>早当てお絵かきだけはネットが必要。宿のWi-Fiでつながらない時は、モバイルデータにすると直ることが多い。</li>
+        <li>スマホを回すゲームは、テーブルや布団の上でやると落としても安心。</li>
+      </ul>
+    </section>
+    <p class="foot">旅宴ゲーム ・ 宴会用に作ったミニゲーム集</p>
+  </div>
+</main>
+<script>
+/* 旅宴ゲーム 共通スクリプト（ネット不要で動く部品だけ） */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+function h(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue;
+    if (k === 'class') e.className = v;
+    else if (k === 'text') e.textContent = v;
+    else if (k === 'html') e.innerHTML = v;
+    else if (k.startsWith('on') && typeof v === 'function') e.addEventListener(k.slice(2), v);
+    else if (k === 'style') e.style.cssText = v;
+    else e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const kid of kids.flat(Infinity)) {
+    if (kid == null || kid === false) continue;
+    e.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+  }
+  return e;
+}
+
+/* 端末内の保存（使えない環境でも落ちない） */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+};
+
+/* 合言葉から毎回同じ乱数を作る */
+function hashStr(str) {
+  let h1 = 1779033703, h2 = 3144134277, h3 = 1013904242, h4 = 2773480762;
+  for (let i = 0, k; i < str.length; i++) {
+    k = str.charCodeAt(i);
+    h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
+    h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
+    h3 = h4 ^ Math.imul(h3 ^ k, 951274213);
+    h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
+  }
+  h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
+  h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+  return ((h1 ^ h2) >>> 0);
+}
+function rng(seed) {
+  let a = typeof seed === 'number' ? seed >>> 0 : hashStr(String(seed));
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function shuffle(arr, rand = Math.random) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function pick(arr, rand = Math.random) { return arr[Math.floor(rand() * arr.length)]; }
+function randomId(len = 6) {
+  const cs = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = '';
+  const buf = new Uint32Array(len);
+  (window.crypto || {}).getRandomValues ? crypto.getRandomValues(buf) : buf.forEach((_, i) => buf[i] = Math.random() * 1e9);
+  for (let i = 0; i < len; i++) s += cs[buf[i] % cs.length];
+  return s;
+}
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/* LINEで送れる「コード」にする（圧縮→base64url、最後に ~） */
+function b64u(bytes) {
+  let s = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function unb64u(str) {
+  str = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (str.length % 4) str += '=';
+  const bin = atob(str);
+  const b = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i);
+  return b;
+}
+async function pipeBytes(bytes, stream) {
+  const s = new Blob([bytes]).stream().pipeThrough(stream);
+  return new Uint8Array(await new Response(s).arrayBuffer());
+}
+async function encodeCode(prefix, obj) {
+  const raw = new TextEncoder().encode(JSON.stringify(obj));
+  if (typeof CompressionStream !== 'undefined') {
+    try {
+      const z = await pipeBytes(raw, new CompressionStream('deflate-raw'));
+      if (z.length < raw.length) return prefix + '.z' + b64u(z) + '~';
+    } catch (e) {}
+  }
+  return prefix + '.r' + b64u(raw) + '~';
+}
+/* 貼り付けた文章からコードを全部取り出す（LINEの名前や時刻が混ざってもOK） */
+async function decodeCodes(text, prefix) {
+  const flat = String(text || '').replace(/\s+/g, '');
+  const re = new RegExp(prefix.replace(/\./g, '\\.') + '\\.([zr])([A-Za-z0-9_-]+)~', 'g');
+  const out = [];
+  let m;
+  while ((m = re.exec(flat))) {
+    try {
+      let bytes = unb64u(m[2]);
+      if (m[1] === 'z') {
+        if (typeof DecompressionStream === 'undefined') throw new Error('old');
+        bytes = await pipeBytes(bytes, new DecompressionStream('deflate-raw'));
+      }
+      out.push(JSON.parse(new TextDecoder().decode(bytes)));
+    } catch (e) { out.push({ __error: e.message === 'old' ? 'old' : 'broken' }); }
+  }
+  return out;
+}
+
+/* 画面の切り替え */
+function show(id) {
+  $$('.screen').forEach(s => { s.hidden = s.id !== id; });
+  window.scrollTo(0, 0);
+}
+
+/* トースト・確認ダイアログ（ブラウザの confirm は使わない） */
+function toast(msg, ms = 2200) {
+  let t = $('#toast');
+  if (!t) { t = h('div', { id: 'toast', class: 'toast', role: 'status', 'aria-live': 'polite' }); document.body.append(t); }
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), ms);
+}
+function ask(msg, opt = {}) {
+  const { ok = 'OK', cancel = 'やめる', danger = false } = opt;
+  return new Promise(res => {
+    const prev = document.activeElement;
+    const close = v => { dlg.remove(); if (prev && prev.focus) prev.focus(); res(v); };
+    const okBtn = h('button', { class: 'btn ' + (danger ? 'danger' : 'primary'), onclick: () => close(true) }, ok);
+    const dlg = h('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', onclick: e => { if (e.target === dlg && cancel) close(false); } },
+      h('div', { class: 'modal-card' },
+        h('p', { class: 'modal-msg' }, msg),
+        h('div', { class: 'modal-actions' }, cancel ? h('button', { class: 'btn', onclick: () => close(false) }, cancel) : null, okBtn)));
+    document.body.append(dlg);
+    okBtn.focus();
+  });
+}
+function sheet(title, bodyNode) {
+  const dlg = h('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': title, onclick: e => { if (e.target === dlg) dlg.remove(); } },
+    h('div', { class: 'modal-card rules' },
+      h('h2', { class: 'h2' }, title),
+      bodyNode,
+      h('button', { class: 'btn primary wide', onclick: () => dlg.remove() }, 'とじる')));
+  document.body.append(dlg);
+  $('button', dlg).focus();
+}
+
+/* コピー・共有 */
+async function copyText(text, fallbackEl) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('コピーした！LINEに貼りつけて送ってね');
+    return true;
+  } catch (e) {
+    if (fallbackEl) { fallbackEl.focus(); fallbackEl.select(); try { fallbackEl.setSelectionRange(0, text.length); } catch (_) {} }
+    toast('自動でコピーできなかったから、文字を長押しして「コピー」してね', 3600);
+    return false;
+  }
+}
+async function shareText(text, fallbackEl) {
+  if (navigator.share) {
+    try { await navigator.share({ text }); return true; }
+    catch (e) { if (e && e.name === 'AbortError') return false; }
+  }
+  return copyText(text, fallbackEl);
+}
+
+/* 効果音（最初のタップ後に鳴る） */
+const Sound = (() => {
+  let ctx = null;
+  let on = store.get('tabi.sound', true);
+  function ac() {
+    if (!on) return null;
+    if (!ctx) { const C = window.AudioContext || window.webkitAudioContext; if (!C) return null; try { ctx = new C(); } catch (e) { return null; } }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+  function tone(freq, dur = 0.12, type = 'sine', vol = 0.2, when = 0) {
+    const c = ac(); if (!c) return;
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.value = freq;
+    const t = c.currentTime + when;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(c.destination);
+    o.start(t); o.stop(t + dur + 0.03);
+  }
+  function noise(dur = 0.3, vol = 0.2, freq = 1000, when = 0) {
+    const c = ac(); if (!c) return;
+    const len = Math.floor(c.sampleRate * dur);
+    const buf = c.createBuffer(1, len, c.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = c.createBufferSource(); src.buffer = buf;
+    const f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = 0.8;
+    const g = c.createGain(); g.gain.value = vol;
+    src.connect(f).connect(g).connect(c.destination);
+    src.start(c.currentTime + when);
+  }
+  return {
+    get on() { return on; },
+    set on(v) { on = !!v; store.set('tabi.sound', on); },
+    unlock() { ac(); },
+    tick() { tone(880, 0.05, 'square', 0.05); },
+    pop() { tone(660, 0.07, 'triangle', 0.12); },
+    ding() { tone(988, 0.14, 'sine', 0.2); tone(1319, 0.28, 'sine', 0.16, 0.11); },
+    buzz() { tone(150, 0.4, 'sawtooth', 0.12); },
+    splash() { noise(0.28, 0.22, 800); },
+    fanfare() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i === 3 ? 0.5 : 0.18, 'triangle', 0.18, i * 0.12)); },
+    drum(n = 18) { for (let i = 0; i < n; i++) noise(0.06, 0.08 + i * 0.008, 180 + i * 6, i * 0.07); }
+  };
+})();
+document.addEventListener('pointerdown', () => Sound.unlock(), { once: true });
+
+/* 画面が暗くならないようにする（使えない端末では何もしない） */
+const Wake = {
+  want: false, lock: null,
+  async on() { this.want = true; if (this.lock && !this.lock.released) return; try { if ('wakeLock' in navigator && document.visibilityState === 'visible') this.lock = await navigator.wakeLock.request('screen'); } catch (e) {} },
+  off() { this.want = false; try { this.lock && this.lock.release(); } catch (e) {} this.lock = null; }
+};
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Wake.want) Wake.on(); });
+
+/* タイマー */
+class Countdown {
+  constructor(sec, onTick, onEnd) { this.total = sec; this.onTick = onTick; this.onEnd = onEnd; this.t0 = 0; this.id = 0; this.lastWhole = null; }
+  start() {
+    this.t0 = performance.now();
+    this.stop();
+    const loop = () => {
+      const left = Math.max(0, this.total - (performance.now() - this.t0) / 1000);
+      const whole = Math.ceil(left);
+      if (whole !== this.lastWhole) { this.lastWhole = whole; this.onTick && this.onTick(whole, left); }
+      if (left <= 0) { this.id = 0; this.onEnd && this.onEnd(); return; }
+      this.id = requestAnimationFrame(loop);
+    };
+    this.id = requestAnimationFrame(loop);
+    return this;
+  }
+  stop() { if (this.id) cancelAnimationFrame(this.id); this.id = 0; }
+}
+
+/* セグメント（選択ボタン） */
+function bindSeg(el, value, onChange) {
+  const btns = $$('button', el);
+  const set = v => { btns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(v)))); };
+  set(value);
+  btns.forEach(b => b.addEventListener('click', () => { set(b.dataset.v); onChange(b.dataset.v); }));
+  return set;
+}
+
+/* 参加者の入力（全ゲームで名前を共有） */
+function PlayerEditor(root, opt = {}) {
+  const min = opt.min || 2, max = opt.max || 16;
+  let names = store.get('tabi.players', null);
+  let count = names ? clamp(names.length, min, max) : (opt.def || 10);
+  names = (names || []).slice(0, max);
+  const out = h('output', { class: 'num', 'aria-live': 'polite' }, count);
+  const grid = h('div', { class: 'names' });
+  function render() {
+    out.textContent = count;
+    grid.textContent = '';
+    for (let i = 0; i < count; i++) {
+      const inp = h('input', { id: (opt.idPrefix || 'p') + i, type: 'text', maxlength: '10', placeholder: (i + 1) + '番目の人', value: names[i] || '', autocomplete: 'off', enterkeyhint: 'next', 'aria-label': (i + 1) + '人目の名前' });
+      inp.addEventListener('input', () => { names[i] = inp.value.trim(); save(); });
+      grid.append(h('label', { class: 'name-in' }, h('span', {}, i + 1), inp));
+    }
+  }
+  function save() { store.set('tabi.players', names.slice(0, count)); }
+  const minus = h('button', { type: 'button', 'aria-label': '1人へらす', onclick: () => { if (count > min) { count--; render(); save(); } } }, '−');
+  const plus = h('button', { type: 'button', 'aria-label': '1人ふやす', onclick: () => { if (count < max) { count++; render(); save(); } } }, '+');
+  root.append(
+    h('div', { class: 'row' }, h('span', { class: 'label' }, '人数'), h('div', { class: 'stepper' }, minus, out, plus), h('span', { class: 'hint' }, '名前は空でもOK')),
+    grid);
+  render();
+  return {
+    get list() {
+      const seen = {};
+      return Array.from({ length: count }, (_, i) => {
+        let n = (names[i] || '').trim() || ((i + 1) + '番目の人');
+        if (seen[n]) { seen[n]++; n = n + seen[n]; } else seen[n] = 1;
+        return n;
+      });
+    }
+  };
+}
+
+/* ゲーム単体で開いた時用：オフライン対応（GitHub Pages などで有効、使えない環境では何もしない） */
+try {
+  if ('serviceWorker' in navigator && location.protocol === 'https:' && !/claude\.ai|claudeusercontent|anthropic/.test(location.hostname)) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+} catch (e) {}
+
+/* 音のON/OFFボタン */
+function bindSoundBtn(btn) {
+  if (!btn) return;
+  const paint = () => { btn.textContent = Sound.on ? '音あり' : '音なし'; btn.setAttribute('aria-pressed', String(Sound.on)); };
+  paint();
+  btn.addEventListener('click', () => { Sound.on = !Sound.on; paint(); if (Sound.on) Sound.pop(); });
+}
+
+</script>
+</body>
+</html>

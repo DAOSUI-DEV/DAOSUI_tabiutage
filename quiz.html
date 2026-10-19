@@ -1,0 +1,1233 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1d2d5c">
+<title>身内クイズ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* 旅宴ゲーム 共通スタイル
+   旅館の夜：藍の浴衣 × 生ビールの金 × 木札。
+   レイアウト：上に細いヘッダー、中央にゲーム、下に親指で押せる大きな操作ボタン */
+:root{
+  --bg:#eef0f6;
+  --surface:#ffffff;
+  --surface-2:#e3e7f2;
+  --fg:#151c36;
+  --muted:#59627f;
+  --line:#c9cfe2;
+  --ai:#22356b;
+  --on-ai:#ffffff;
+  --gold:#e3a20d;
+  --gold-soft:#fbecc2;
+  --on-gold:#2b1d00;
+  --wood:#ead8b3;
+  --wood-edge:#c4a46c;
+  --on-wood:#2a2014;
+  --primary:#22356b;
+  --on-primary:#ffffff;
+  --good:#17804f;
+  --good-soft:#d9f2e5;
+  --bad:#c3352b;
+  --bad-soft:#fbe1de;
+  --head-bg:#1d2d5c;
+  --head-fg:#f3f5fb;
+  --scrim:rgba(13,20,48,.55);
+  --paper:#ffffff;
+  --shadow:0 1px 2px rgba(21,28,54,.08),0 8px 24px rgba(21,28,54,.08);
+  --f-display:"Dela Gothic One","Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP","Noto Sans CJK JP",sans-serif;
+  --f-body:"Hiragino Maru Gothic ProN","Zen Maru Gothic","Hiragino Sans","Noto Sans JP","Noto Sans CJK JP",system-ui,sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1430;--surface:#162047;--surface-2:#1f2b5a;--fg:#eef1fb;--muted:#a2abc9;--line:#2e3c74;
+    --ai:#9db1f0;--on-ai:#0b1230;--gold:#f4bb2a;--gold-soft:#3b300f;--on-gold:#1f1500;
+    --wood:#3d3323;--wood-edge:#6a5534;--on-wood:#f4e7cc;--primary:#9db1f0;--on-primary:#0b1230;
+    --good:#43c98e;--good-soft:#123a2a;--bad:#ff7466;--bad-soft:#47201d;--head-bg:#0a1026;--head-fg:#eef1fb;
+    --scrim:rgba(0,0,0,.6);--paper:#ffffff;--shadow:none;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d1430;--surface:#162047;--surface-2:#1f2b5a;--fg:#eef1fb;--muted:#a2abc9;--line:#2e3c74;
+  --ai:#9db1f0;--on-ai:#0b1230;--gold:#f4bb2a;--gold-soft:#3b300f;--on-gold:#1f1500;
+  --wood:#3d3323;--wood-edge:#6a5534;--on-wood:#f4e7cc;--primary:#9db1f0;--on-primary:#0b1230;
+  --good:#43c98e;--good-soft:#123a2a;--bad:#ff7466;--bad-soft:#47201d;--head-bg:#0a1026;--head-fg:#eef1fb;
+  --scrim:rgba(0,0,0,.6);--paper:#ffffff;--shadow:none;color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.6;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--head-bg)}
+[hidden]{display:none!important}
+img{max-width:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+/* ヘッダー */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;align-items:center;gap:8px;min-height:52px;background:var(--head-bg);color:var(--head-fg);padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));border-bottom:3px solid var(--gold)}
+.bar-title{flex:1;margin:0;font-family:var(--f-display);font-weight:400;font-size:19px;letter-spacing:.04em;line-height:1.2;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-back,.bar-btn{flex:0 0 auto;min-width:64px;min-height:36px;display:inline-flex;align-items:center;justify-content:center;padding:4px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.28);background:transparent;color:var(--head-fg);font-size:13px;text-decoration:none}
+.bar-back::before{content:"";width:8px;height:8px;border-left:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin-right:6px}
+
+/* 本体 */
+.wrap{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 40px}
+.screen{display:flex;flex-direction:column;gap:16px}
+.fill-app{height:100%;display:flex;flex-direction:column}
+.fill-app .wrap{flex:1;min-height:0;width:100%;display:flex;flex-direction:column}
+.fill-app .screen.fill{flex:1;min-height:0}
+
+.eyebrow{margin:0;font-size:12px;letter-spacing:.14em;color:var(--muted);font-weight:700}
+.h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:24px;line-height:1.3;text-wrap:balance}
+.h3{margin:0;font-size:17px;font-weight:700;line-height:1.4}
+.lead{margin:0;color:var(--muted);font-size:15px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.center{text-align:center}
+.num{font-variant-numeric:tabular-nums}
+.stack{display:flex;flex-direction:column;gap:10px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row > *{min-width:0}
+.spacer{flex:1}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px}
+.panel-title{margin:0;font-size:14px;font-weight:700;color:var(--muted);letter-spacing:.06em}
+
+/* ボタン */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:10px 18px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font-weight:700;font-size:16px;line-height:1.3;text-align:center;text-decoration:none;user-select:none;-webkit-user-select:none;transition:transform .08s ease,filter .15s ease}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.45;pointer-events:none}
+.btn.primary{background:var(--primary);color:var(--on-primary);border-color:transparent}
+.btn.gold{background:var(--gold);color:var(--on-gold);border-color:transparent}
+.btn.danger{background:var(--bad);color:#fff;border-color:transparent}
+.btn.ghost{background:transparent}
+.btn.big{width:100%;min-height:60px;font-size:18px;border-radius:16px}
+.btn.wide{width:100%}
+.btn.sm{min-height:36px;padding:6px 12px;font-size:14px;border-radius:10px}
+.actions{display:flex;flex-direction:column;gap:10px}
+
+/* 入力 */
+.field{display:flex;flex-direction:column;gap:6px}
+.field > label,.label{font-size:14px;font-weight:700}
+.input,.textarea{width:100%;min-height:48px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:17px;line-height:1.5}
+.textarea{min-height:110px;resize:vertical;font-size:15px;word-break:break-all}
+.input:focus,.textarea:focus{border-color:var(--ai);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--ai) 25%,transparent)}
+.hint{margin:0;font-size:13px;color:var(--muted)}
+
+/* セグメント */
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{flex:1 1 auto;min-height:42px;padding:6px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-size:15px;font-weight:700;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ai);border-color:var(--ai);color:var(--on-ai)}
+
+/* 人数ステッパー */
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.stepper button{width:48px;height:44px;border:0;background:transparent;font-size:22px;font-weight:700}
+.stepper output{min-width:56px;text-align:center;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.names{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.name-in{min-width:0;display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding-left:10px}
+.name-in span{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:1.4em}
+.name-in input{flex:1;min-width:0;width:100%;border:0;background:transparent;min-height:42px;font-size:16px;padding:4px 8px 4px 0}
+.name-in input:focus{outline:none}
+.name-in:focus-within{border-color:var(--ai)}
+
+/* ピル・バッジ */
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;background:var(--surface-2);font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.pill.gold{background:var(--gold);color:var(--on-gold)}
+.pill.warn{background:var(--bad);color:#fff}
+.tag{display:inline-block;padding:2px 8px;border-radius:6px;background:var(--gold-soft);color:var(--fg);font-size:12px;font-weight:700}
+
+/* 大きな名前表示 */
+.big-name{font-family:var(--f-display);font-weight:400;font-size:clamp(34px,11vw,52px);line-height:1.2;text-align:center;word-break:break-all;margin:0}
+
+/* モーダル */
+.modal{position:fixed;inset:0;z-index:50;background:var(--scrim);display:flex;align-items:flex-end;justify-content:center;padding:16px;padding-bottom:max(16px,env(safe-area-inset-bottom,0px))}
+.modal-card{width:100%;max-width:520px;max-height:85vh;overflow:auto;background:var(--surface);color:var(--fg);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px;animation:rise .18s ease-out}
+.modal-msg{margin:0;font-size:17px;line-height:1.6;white-space:pre-wrap}
+.modal-actions{display:flex;gap:10px}
+.modal-actions .btn{flex:1}
+.rules h3{margin:8px 0 0;font-size:16px}
+.rules p,.rules ul,.rules ol{margin:0;font-size:15px}
+.rules ul,.rules ol{padding-left:1.3em}
+.rules li+li{margin-top:4px}
+@keyframes rise{from{transform:translateY(16px);opacity:.4}to{transform:none;opacity:1}}
+
+/* トースト */
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);z-index:60;max-width:calc(100% - 32px);padding:10px 16px;border-radius:12px;background:var(--fg);color:var(--bg);font-size:14px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* コード表示 */
+.code-box{font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.4;min-height:84px;max-height:140px;word-break:break-all}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+
+.m0{margin:0}
+.choice-big{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:16px 18px;min-height:72px}
+.choice-big small{font-weight:500;font-size:13px;opacity:.85}
+.when{display:inline-block;margin-right:6px;padding:1px 8px;border-radius:6px;background:var(--gold);color:var(--on-gold);font-size:12px}
+.qform{display:flex;flex-direction:column;gap:14px}
+.qn{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;margin-right:4px}
+.count{font-size:14px;font-weight:700}
+.count.ok{color:var(--good)}
+
+/* 幹事：回答リスト */
+.who-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.who-list li{display:flex;align-items:center;gap:10px;padding:8px 10px 8px 14px;border-radius:10px;background:var(--surface-2)}
+.who-list .nm{flex:1;min-width:0;font-weight:700;word-break:break-all}
+.who-list .cnt{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.x{width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-size:18px;line-height:1}
+.preview{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;counter-reset:q}
+.preview li{display:flex;flex-direction:column;gap:4px;padding:12px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
+.preview li.off{opacity:.45}
+.preview li.off .qt{text-decoration:line-through}
+.preview .ph{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)}
+.preview .qt{font-weight:700;line-height:1.5}
+.preview .ans{font-size:13px;color:var(--muted)}
+.type{display:inline-block;padding:1px 8px;border-radius:6px;background:var(--surface-2);color:var(--fg);font-weight:700;font-size:12px}
+.x2{display:inline-block;padding:1px 8px;border-radius:6px;background:var(--bad);color:#fff;font-weight:700;font-size:12px}
+
+/* 問題（幹事・プレイヤー共通） */
+.qhead{display:flex;align-items:center;gap:8px}
+.qno{font-family:var(--f-display);font-size:22px}
+.qcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 16px;display:flex;flex-direction:column;gap:14px}
+.qtext{margin:0;font-size:22px;font-weight:700;line-height:1.5;text-wrap:balance;word-break:break-word}
+.choices{display:flex;flex-direction:column;gap:10px}
+.choice{display:flex;align-items:center;gap:12px;min-height:58px;padding:10px 14px;border-radius:14px;border:2px solid var(--line);background:var(--surface);font-size:18px;font-weight:700;text-align:left;line-height:1.35;word-break:break-word}
+.choice .k{flex:0 0 auto;display:inline-grid;place-items:center;width:30px;height:30px;border-radius:8px;background:var(--ai);color:var(--on-ai);font-size:15px}
+.choice.correct{border-color:var(--good);background:var(--good-soft)}
+.choice.correct .k{background:var(--good);color:#fff}
+.choice.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.choice.picked{border-color:var(--ai);box-shadow:0 0 0 2px var(--ai)}
+.choice:disabled{opacity:1}
+.choices.locked .choice:not(.picked):not(.correct){opacity:.55}
+.numrow{display:flex;gap:8px;align-items:center}
+.numrow .input{font-size:24px;text-align:right;font-variant-numeric:tabular-nums}
+.numrow .unit{font-weight:700;white-space:nowrap}
+.answer-big{font-family:var(--f-display);font-size:34px;text-align:center;margin:0;color:var(--good);word-break:break-all}
+.elapsed{font-variant-numeric:tabular-nums}
+
+/* プレイヤーの点数 */
+.scorebar{display:flex;align-items:center;gap:10px;padding:10px 16px;border-radius:var(--r);background:var(--head-bg);color:var(--head-fg)}
+.scorebar b{font-family:var(--f-display);font-weight:400;font-size:26px;font-variant-numeric:tabular-nums}
+.result-box{display:flex;flex-direction:column;align-items:center;gap:6px;padding:18px;border-radius:var(--r);text-align:center}
+.result-box.ok{background:var(--good-soft)}
+.result-box.ng{background:var(--bad-soft)}
+.result-box.self{background:var(--gold-soft)}
+.result-box .big{font-family:var(--f-display);font-size:34px;line-height:1.2}
+.result-box.ok .big{color:var(--good)}
+.result-box.ng .big{color:var(--bad)}
+.result-box .plus{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.final-score{font-family:var(--f-display);font-size:72px;line-height:1;text-align:center;margin:8px 0 0;font-variant-numeric:tabular-nums}
+.waitbox{display:flex;flex-direction:column;align-items:center;gap:8px;padding:28px 16px;border-radius:var(--r);background:var(--surface);border:1px dashed var(--line);text-align:center}
+.waitbox .qno{font-size:40px}
+
+/* カウントダウン */
+.cd{position:fixed;inset:0;z-index:45;display:flex;align-items:center;justify-content:center;background:var(--scrim)}
+.cd span{font-family:var(--f-display);font-size:120px;color:#fff;animation:pop .5s ease-out}
+@keyframes pop{from{transform:scale(1.6);opacity:0}to{transform:none;opacity:1}}
+
+/* 得点入力・ランキング */
+.score-in{display:grid;grid-template-columns:minmax(0,1fr) 7.5em;gap:8px;align-items:center}
+.score-in .nm{font-weight:700;word-break:break-all}
+.score-in .input{text-align:right;font-variant-numeric:tabular-nums}
+.ranks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.ranks li{display:grid;grid-template-columns:3em minmax(0,1fr) auto;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--line);animation:rise .4s ease-out}
+.ranks .pos{font-family:var(--f-display);font-size:20px;color:var(--muted)}
+.ranks .nm{font-weight:700;font-size:18px;word-break:break-all}
+.ranks .sc{font-weight:700;font-variant-numeric:tabular-nums}
+.ranks li.top{background:var(--gold);color:var(--on-gold);border-color:transparent}
+.ranks li.top .pos{color:var(--on-gold)}
+.ranks li.top .nm{font-family:var(--f-display);font-weight:400;font-size:24px}
+</style>
+</head>
+<body>
+<header class="bar">
+  <a class="bar-back" href="index.html">トップ</a>
+  <h1 class="bar-title">身内クイズ</h1>
+  <button class="bar-btn" id="helpBtn" type="button">ルール</button>
+</header>
+
+<main class="wrap">
+  <!-- ホーム -->
+  <section id="sHome" class="screen">
+    <div class="stack">
+      <p class="eyebrow">全員が自分のスマホで遊ぶゲーム</p>
+      <h2 class="h2">みんなのアンケートが、そのままクイズになる</h2>
+      <p class="lead">事前にアンケートに答えておくと、「実はトマトが苦手なのは誰？」みたいな身内だけのクイズが自動でできあがるよ。</p>
+    </div>
+    <div class="actions">
+      <button class="btn big gold choice-big" id="goSurvey" type="button"><span><span class="when">事前</span>アンケートに答える</span><small>全員。3分くらい。答えたらコードを幹事に送る</small></button>
+      <button class="btn big primary choice-big" id="goJoin" type="button"><span><span class="when">当日</span>クイズに参加する</span><small>全員。幹事から届いた参加コードを貼りつける</small></button>
+    </div>
+    <div class="panel">
+      <p class="panel-title">幹事メニュー</p>
+      <button class="btn wide" id="goCollect" type="button">回答を集めてクイズを作る</button>
+      <button class="btn wide" id="goHost" type="button" hidden>クイズを進行する</button>
+    </div>
+  </section>
+
+  <!-- アンケート -->
+  <section id="sSurvey" class="screen" hidden>
+    <div class="stack">
+      <p class="eyebrow">事前アンケート</p>
+      <h2 class="h2">答えた内容がクイズに出るよ</h2>
+      <p class="lead">短く書くのがコツ。言いたくない質問は空でOK（5問以上答えてね）。答えは当日まで幹事しか見ないよ。</p>
+    </div>
+    <form class="qform" id="surveyForm" novalidate>
+      <div class="field"><label for="sv_name">名前（みんなが呼んでる呼び方）</label><input id="sv_name" class="input" maxlength="10" autocomplete="off" required></div>
+      <div id="svFields" class="qform"></div>
+      <p class="count" id="svCount" role="status"></p>
+      <button class="btn big primary" type="submit">回答コードを作る</button>
+    </form>
+    <div id="svDone" class="panel" hidden>
+      <p class="h3 m0">回答コードができた</p>
+      <p class="m0 small">このコードを幹事にLINEで送ってね（グループじゃなくて幹事に直接がおすすめ）。</p>
+      <textarea class="textarea code-box" id="svCode" readonly aria-label="回答コード"></textarea>
+      <div class="row">
+        <button class="btn primary" id="svShare" type="button">LINEなどで送る</button>
+        <button class="btn" id="svCopy" type="button">コピー</button>
+      </div>
+    </div>
+    <button class="btn wide ghost" type="button" data-home>はじめの画面へ</button>
+  </section>
+
+  <!-- 幹事：回答を集める -->
+  <section id="sCollect" class="screen" hidden>
+    <div class="stack"><p class="eyebrow">幹事</p><h2 class="h2">回答を集めてクイズを作る</h2>
+    <p class="lead">みんなから届いた回答コードを貼りつけていってね。何人分まとめて貼ってもOK。</p></div>
+    <div class="panel">
+      <textarea class="textarea code-box" id="cPaste" placeholder="MQA1. ではじまるコード" aria-label="回答コードの貼りつけ"></textarea>
+      <div class="row">
+        <button class="btn primary" id="cAdd" type="button">貼りつけた回答を追加</button>
+        <button class="btn" id="cMine" type="button" hidden>この端末の自分の回答を追加</button>
+      </div>
+    </div>
+    <div class="panel">
+      <p class="panel-title" id="cTitle">集まった回答（0人）</p>
+      <ul class="who-list" id="cList"></ul>
+      <p class="hint" id="cEmpty">まだ誰の回答もないよ。</p>
+    </div>
+    <div class="panel">
+      <p class="panel-title">問題の数</p>
+      <div class="seg" id="optCount"><button type="button" data-v="8">8問</button><button type="button" data-v="12">12問</button><button type="button" data-v="16">16問</button><button type="button" data-v="20">20問</button></div>
+      <p class="hint">1問1分くらい。12問で15〜20分が目安。</p>
+    </div>
+    <button class="btn big primary" id="cGen" type="button">クイズを作る</button>
+    <button class="btn wide ghost" type="button" data-home>はじめの画面へ</button>
+  </section>
+
+  <!-- 幹事：プレビュー -->
+  <section id="sPreview" class="screen" hidden>
+    <div class="stack"><p class="eyebrow">幹事</p><h2 class="h2">こんなクイズができた</h2>
+    <p class="lead">出したくない問題はタップで外せるよ。最後の問題は得点2倍。</p></div>
+    <ol class="preview" id="pList"></ol>
+    <div class="actions">
+      <button class="btn big primary" id="pOk" type="button">このクイズで決定</button>
+      <button class="btn wide" id="pRe" type="button">別の組み合わせで作りなおす</button>
+      <button class="btn wide ghost" id="pBack" type="button">回答の画面にもどる</button>
+    </div>
+  </section>
+
+  <!-- 幹事：参加コード -->
+  <section id="sHostCode" class="screen" hidden>
+    <div class="stack"><p class="eyebrow">幹事</p><h2 class="h2">参加コードができた</h2>
+    <p class="lead">クイズを始める前に、このコードをLINEのグループに送ってね。みんなは「クイズに参加する」から貼りつける。</p></div>
+    <div class="panel">
+      <textarea class="textarea code-box" id="hCode" readonly aria-label="参加コード"></textarea>
+      <div class="row">
+        <button class="btn primary" id="hShare" type="button">LINEなどで送る</button>
+        <button class="btn" id="hCopy" type="button">コピー</button>
+      </div>
+      <p class="hint">問題と答えが入ってるから、送るのは当日の始まる直前がおすすめ。</p>
+    </div>
+    <button class="btn big gold" id="hStart" type="button">クイズの進行をはじめる</button>
+    <button class="btn wide ghost" type="button" data-home>はじめの画面へ</button>
+  </section>
+
+  <!-- 幹事：進行 -->
+  <section id="sHost" class="screen" hidden>
+    <div class="qhead"><span class="qno" id="hNo">第1問</span><span class="muted num" id="hOf"></span><span class="x2" id="hX2" hidden>得点2倍</span><span class="spacer"></span><button class="btn sm ghost" id="hMenu" type="button">一覧</button></div>
+    <div class="qcard">
+      <p class="eyebrow m0" id="hType"></p>
+      <p class="qtext" id="hQ"></p>
+      <div class="choices" id="hChoices"></div>
+      <div id="hAnswer" class="stack" hidden></div>
+    </div>
+    <div class="actions">
+      <button class="btn big gold" id="hGo" type="button">スタートの合図</button>
+      <button class="btn big primary" id="hReveal" type="button">正解を発表</button>
+      <button class="btn big" id="hNext" type="button">次の問題へ</button>
+    </div>
+    <p class="hint">流れ：「スタートの合図」で全員が自分のスマホで問題を開く → みんな答えたら「正解を発表」→ みんなは自分の画面で「答え合わせ」→「次の問題へ」</p>
+  </section>
+
+  <!-- 幹事：得点入力 -->
+  <section id="sScores" class="screen" hidden>
+    <div class="stack"><p class="eyebrow">幹事</p><h2 class="h2">みんなの点数を入れてね</h2>
+    <p class="lead">一人ずつ自分の画面に出ている合計点を読み上げてもらって入力しよう。</p></div>
+    <div class="panel"><div class="stack" id="scList"></div>
+      <div class="row"><input id="scNew" class="input" style="flex:1" maxlength="10" placeholder="名前を追加（アンケート未回答の人）" aria-label="追加する名前"><button class="btn" id="scAdd" type="button">追加</button></div>
+    </div>
+    <button class="btn big gold" id="toRank" type="button">ランキング発表</button>
+    <button class="btn wide ghost" id="scBack" type="button">最後の問題にもどる</button>
+  </section>
+
+  <!-- ランキング -->
+  <section id="sRank" class="screen" hidden>
+    <div class="stack"><p class="eyebrow">結果発表</p><h2 class="h2" id="rTitle">いちばん仲間をわかってるのは誰だ</h2></div>
+    <ol class="ranks" id="rList"></ol>
+    <button class="btn big gold" id="rNext" type="button">次の順位を発表</button>
+    <button class="btn wide ghost" id="rBack" type="button">点数の入力にもどる</button>
+  </section>
+
+  <!-- プレイヤー：参加 -->
+  <section id="sJoin" class="screen" hidden>
+    <div class="stack"><p class="eyebrow">当日</p><h2 class="h2">参加コードを貼りつける</h2>
+    <p class="lead">幹事から届いたメッセージを長押しでコピーして、下に貼りつけてね。</p></div>
+    <textarea class="textarea code-box" id="jCode" placeholder="MQP1. ではじまるコード" aria-label="参加コード"></textarea>
+    <button class="btn big primary" id="jRead" type="button">読みこむ</button>
+    <div id="jPick" class="panel" hidden>
+      <p class="h3 m0">自分の名前を選んでね</p>
+      <div class="stack" id="jNames"></div>
+      <div class="row"><input id="jOther" class="input" style="flex:1" maxlength="10" placeholder="リストにない人はここに名前" aria-label="リストにない名前"><button class="btn" id="jOtherGo" type="button">参加</button></div>
+    </div>
+    <button class="btn wide ghost" type="button" data-home>はじめの画面へ</button>
+  </section>
+
+  <!-- プレイヤー：プレイ -->
+  <section id="sPlay" class="screen" hidden>
+    <div class="scorebar"><span id="plName"></span><span class="spacer"></span><span class="small">合計</span><b id="plScore">0</b></div>
+    <div id="plWait" class="waitbox">
+      <span class="qno" id="plNo">第1問</span>
+      <span class="x2" id="plX2" hidden>得点2倍</span>
+      <p class="m0" id="plWaitText">幹事の「スタート」の合図で開いてね</p>
+      <button class="btn big primary" id="plOpen" type="button">問題を開く</button>
+    </div>
+    <div id="plQ" class="qcard" hidden>
+      <div class="qhead"><span class="eyebrow" id="plQNo"></span><span class="spacer"></span><span class="pill num elapsed" id="plTime">0.0秒</span></div>
+      <p class="qtext" id="plText"></p>
+      <div class="choices" id="plChoices"></div>
+      <div id="plNum" class="stack" hidden>
+        <div class="numrow"><input id="plNumIn" class="input" inputmode="decimal" autocomplete="off" aria-label="数字で答える"><span class="unit" id="plUnit"></span></div>
+        <button class="btn big primary" id="plNumGo" type="button">この数字で答える</button>
+      </div>
+      <div id="plLocked" class="stack" hidden>
+        <p class="m0 center" id="plLockedText"></p>
+        <button class="btn big gold" id="plCheck" type="button">答え合わせ（幹事の発表のあとに）</button>
+      </div>
+    </div>
+    <div id="plRes" class="stack" hidden>
+      <div class="result-box" id="plResBox"><span class="big" id="plResBig"></span><span id="plResAns"></span><span class="plus" id="plResPts"></span></div>
+      <button class="btn big primary" id="plNext" type="button">次の問題へ</button>
+    </div>
+    <div id="plFinal" class="stack" hidden>
+      <p class="eyebrow center m0">全問おわり</p>
+      <p class="final-score" id="plFinalScore">0</p>
+      <p class="center m0 h3">点</p>
+      <div class="panel center"><p class="m0">この点数を幹事に伝えてね。ランキング発表をお楽しみに！</p></div>
+      <p class="hint center" id="plBreak"></p>
+    </div>
+  </section>
+</main>
+
+<script>
+/* 旅宴ゲーム 共通スクリプト（ネット不要で動く部品だけ） */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+function h(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue;
+    if (k === 'class') e.className = v;
+    else if (k === 'text') e.textContent = v;
+    else if (k === 'html') e.innerHTML = v;
+    else if (k.startsWith('on') && typeof v === 'function') e.addEventListener(k.slice(2), v);
+    else if (k === 'style') e.style.cssText = v;
+    else e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const kid of kids.flat(Infinity)) {
+    if (kid == null || kid === false) continue;
+    e.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+  }
+  return e;
+}
+
+/* 端末内の保存（使えない環境でも落ちない） */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+};
+
+/* 合言葉から毎回同じ乱数を作る */
+function hashStr(str) {
+  let h1 = 1779033703, h2 = 3144134277, h3 = 1013904242, h4 = 2773480762;
+  for (let i = 0, k; i < str.length; i++) {
+    k = str.charCodeAt(i);
+    h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
+    h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
+    h3 = h4 ^ Math.imul(h3 ^ k, 951274213);
+    h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
+  }
+  h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
+  h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+  return ((h1 ^ h2) >>> 0);
+}
+function rng(seed) {
+  let a = typeof seed === 'number' ? seed >>> 0 : hashStr(String(seed));
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function shuffle(arr, rand = Math.random) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function pick(arr, rand = Math.random) { return arr[Math.floor(rand() * arr.length)]; }
+function randomId(len = 6) {
+  const cs = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = '';
+  const buf = new Uint32Array(len);
+  (window.crypto || {}).getRandomValues ? crypto.getRandomValues(buf) : buf.forEach((_, i) => buf[i] = Math.random() * 1e9);
+  for (let i = 0; i < len; i++) s += cs[buf[i] % cs.length];
+  return s;
+}
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/* LINEで送れる「コード」にする（圧縮→base64url、最後に ~） */
+function b64u(bytes) {
+  let s = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function unb64u(str) {
+  str = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (str.length % 4) str += '=';
+  const bin = atob(str);
+  const b = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i);
+  return b;
+}
+async function pipeBytes(bytes, stream) {
+  const s = new Blob([bytes]).stream().pipeThrough(stream);
+  return new Uint8Array(await new Response(s).arrayBuffer());
+}
+async function encodeCode(prefix, obj) {
+  const raw = new TextEncoder().encode(JSON.stringify(obj));
+  if (typeof CompressionStream !== 'undefined') {
+    try {
+      const z = await pipeBytes(raw, new CompressionStream('deflate-raw'));
+      if (z.length < raw.length) return prefix + '.z' + b64u(z) + '~';
+    } catch (e) {}
+  }
+  return prefix + '.r' + b64u(raw) + '~';
+}
+/* 貼り付けた文章からコードを全部取り出す（LINEの名前や時刻が混ざってもOK） */
+async function decodeCodes(text, prefix) {
+  const flat = String(text || '').replace(/\s+/g, '');
+  const re = new RegExp(prefix.replace(/\./g, '\\.') + '\\.([zr])([A-Za-z0-9_-]+)~', 'g');
+  const out = [];
+  let m;
+  while ((m = re.exec(flat))) {
+    try {
+      let bytes = unb64u(m[2]);
+      if (m[1] === 'z') {
+        if (typeof DecompressionStream === 'undefined') throw new Error('old');
+        bytes = await pipeBytes(bytes, new DecompressionStream('deflate-raw'));
+      }
+      out.push(JSON.parse(new TextDecoder().decode(bytes)));
+    } catch (e) { out.push({ __error: e.message === 'old' ? 'old' : 'broken' }); }
+  }
+  return out;
+}
+
+/* 画面の切り替え */
+function show(id) {
+  $$('.screen').forEach(s => { s.hidden = s.id !== id; });
+  window.scrollTo(0, 0);
+}
+
+/* トースト・確認ダイアログ（ブラウザの confirm は使わない） */
+function toast(msg, ms = 2200) {
+  let t = $('#toast');
+  if (!t) { t = h('div', { id: 'toast', class: 'toast', role: 'status', 'aria-live': 'polite' }); document.body.append(t); }
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), ms);
+}
+function ask(msg, opt = {}) {
+  const { ok = 'OK', cancel = 'やめる', danger = false } = opt;
+  return new Promise(res => {
+    const prev = document.activeElement;
+    const close = v => { dlg.remove(); if (prev && prev.focus) prev.focus(); res(v); };
+    const okBtn = h('button', { class: 'btn ' + (danger ? 'danger' : 'primary'), onclick: () => close(true) }, ok);
+    const dlg = h('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', onclick: e => { if (e.target === dlg && cancel) close(false); } },
+      h('div', { class: 'modal-card' },
+        h('p', { class: 'modal-msg' }, msg),
+        h('div', { class: 'modal-actions' }, cancel ? h('button', { class: 'btn', onclick: () => close(false) }, cancel) : null, okBtn)));
+    document.body.append(dlg);
+    okBtn.focus();
+  });
+}
+function sheet(title, bodyNode) {
+  const dlg = h('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': title, onclick: e => { if (e.target === dlg) dlg.remove(); } },
+    h('div', { class: 'modal-card rules' },
+      h('h2', { class: 'h2' }, title),
+      bodyNode,
+      h('button', { class: 'btn primary wide', onclick: () => dlg.remove() }, 'とじる')));
+  document.body.append(dlg);
+  $('button', dlg).focus();
+}
+
+/* コピー・共有 */
+async function copyText(text, fallbackEl) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('コピーした！LINEに貼りつけて送ってね');
+    return true;
+  } catch (e) {
+    if (fallbackEl) { fallbackEl.focus(); fallbackEl.select(); try { fallbackEl.setSelectionRange(0, text.length); } catch (_) {} }
+    toast('自動でコピーできなかったから、文字を長押しして「コピー」してね', 3600);
+    return false;
+  }
+}
+async function shareText(text, fallbackEl) {
+  if (navigator.share) {
+    try { await navigator.share({ text }); return true; }
+    catch (e) { if (e && e.name === 'AbortError') return false; }
+  }
+  return copyText(text, fallbackEl);
+}
+
+/* 効果音（最初のタップ後に鳴る） */
+const Sound = (() => {
+  let ctx = null;
+  let on = store.get('tabi.sound', true);
+  function ac() {
+    if (!on) return null;
+    if (!ctx) { const C = window.AudioContext || window.webkitAudioContext; if (!C) return null; try { ctx = new C(); } catch (e) { return null; } }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+  function tone(freq, dur = 0.12, type = 'sine', vol = 0.2, when = 0) {
+    const c = ac(); if (!c) return;
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.value = freq;
+    const t = c.currentTime + when;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(c.destination);
+    o.start(t); o.stop(t + dur + 0.03);
+  }
+  function noise(dur = 0.3, vol = 0.2, freq = 1000, when = 0) {
+    const c = ac(); if (!c) return;
+    const len = Math.floor(c.sampleRate * dur);
+    const buf = c.createBuffer(1, len, c.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = c.createBufferSource(); src.buffer = buf;
+    const f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = 0.8;
+    const g = c.createGain(); g.gain.value = vol;
+    src.connect(f).connect(g).connect(c.destination);
+    src.start(c.currentTime + when);
+  }
+  return {
+    get on() { return on; },
+    set on(v) { on = !!v; store.set('tabi.sound', on); },
+    unlock() { ac(); },
+    tick() { tone(880, 0.05, 'square', 0.05); },
+    pop() { tone(660, 0.07, 'triangle', 0.12); },
+    ding() { tone(988, 0.14, 'sine', 0.2); tone(1319, 0.28, 'sine', 0.16, 0.11); },
+    buzz() { tone(150, 0.4, 'sawtooth', 0.12); },
+    splash() { noise(0.28, 0.22, 800); },
+    fanfare() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i === 3 ? 0.5 : 0.18, 'triangle', 0.18, i * 0.12)); },
+    drum(n = 18) { for (let i = 0; i < n; i++) noise(0.06, 0.08 + i * 0.008, 180 + i * 6, i * 0.07); }
+  };
+})();
+document.addEventListener('pointerdown', () => Sound.unlock(), { once: true });
+
+/* 画面が暗くならないようにする（使えない端末では何もしない） */
+const Wake = {
+  want: false, lock: null,
+  async on() { this.want = true; if (this.lock && !this.lock.released) return; try { if ('wakeLock' in navigator && document.visibilityState === 'visible') this.lock = await navigator.wakeLock.request('screen'); } catch (e) {} },
+  off() { this.want = false; try { this.lock && this.lock.release(); } catch (e) {} this.lock = null; }
+};
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Wake.want) Wake.on(); });
+
+/* タイマー */
+class Countdown {
+  constructor(sec, onTick, onEnd) { this.total = sec; this.onTick = onTick; this.onEnd = onEnd; this.t0 = 0; this.id = 0; this.lastWhole = null; }
+  start() {
+    this.t0 = performance.now();
+    this.stop();
+    const loop = () => {
+      const left = Math.max(0, this.total - (performance.now() - this.t0) / 1000);
+      const whole = Math.ceil(left);
+      if (whole !== this.lastWhole) { this.lastWhole = whole; this.onTick && this.onTick(whole, left); }
+      if (left <= 0) { this.id = 0; this.onEnd && this.onEnd(); return; }
+      this.id = requestAnimationFrame(loop);
+    };
+    this.id = requestAnimationFrame(loop);
+    return this;
+  }
+  stop() { if (this.id) cancelAnimationFrame(this.id); this.id = 0; }
+}
+
+/* セグメント（選択ボタン） */
+function bindSeg(el, value, onChange) {
+  const btns = $$('button', el);
+  const set = v => { btns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(v)))); };
+  set(value);
+  btns.forEach(b => b.addEventListener('click', () => { set(b.dataset.v); onChange(b.dataset.v); }));
+  return set;
+}
+
+/* 参加者の入力（全ゲームで名前を共有） */
+function PlayerEditor(root, opt = {}) {
+  const min = opt.min || 2, max = opt.max || 16;
+  let names = store.get('tabi.players', null);
+  let count = names ? clamp(names.length, min, max) : (opt.def || 10);
+  names = (names || []).slice(0, max);
+  const out = h('output', { class: 'num', 'aria-live': 'polite' }, count);
+  const grid = h('div', { class: 'names' });
+  function render() {
+    out.textContent = count;
+    grid.textContent = '';
+    for (let i = 0; i < count; i++) {
+      const inp = h('input', { id: (opt.idPrefix || 'p') + i, type: 'text', maxlength: '10', placeholder: (i + 1) + '番目の人', value: names[i] || '', autocomplete: 'off', enterkeyhint: 'next', 'aria-label': (i + 1) + '人目の名前' });
+      inp.addEventListener('input', () => { names[i] = inp.value.trim(); save(); });
+      grid.append(h('label', { class: 'name-in' }, h('span', {}, i + 1), inp));
+    }
+  }
+  function save() { store.set('tabi.players', names.slice(0, count)); }
+  const minus = h('button', { type: 'button', 'aria-label': '1人へらす', onclick: () => { if (count > min) { count--; render(); save(); } } }, '−');
+  const plus = h('button', { type: 'button', 'aria-label': '1人ふやす', onclick: () => { if (count < max) { count++; render(); save(); } } }, '+');
+  root.append(
+    h('div', { class: 'row' }, h('span', { class: 'label' }, '人数'), h('div', { class: 'stepper' }, minus, out, plus), h('span', { class: 'hint' }, '名前は空でもOK')),
+    grid);
+  render();
+  return {
+    get list() {
+      const seen = {};
+      return Array.from({ length: count }, (_, i) => {
+        let n = (names[i] || '').trim() || ((i + 1) + '番目の人');
+        if (seen[n]) { seen[n]++; n = n + seen[n]; } else seen[n] = 1;
+        return n;
+      });
+    }
+  };
+}
+
+/* ゲーム単体で開いた時用：オフライン対応（GitHub Pages などで有効、使えない環境では何もしない） */
+try {
+  if ('serviceWorker' in navigator && location.protocol === 'https:' && !/claude\.ai|claudeusercontent|anthropic/.test(location.hostname)) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+} catch (e) {}
+
+/* 音のON/OFFボタン */
+function bindSoundBtn(btn) {
+  if (!btn) return;
+  const paint = () => { btn.textContent = Sound.on ? '音あり' : '音なし'; btn.setAttribute('aria-pressed', String(Sound.on)); };
+  paint();
+  btn.addEventListener('click', () => { Sound.on = !Sound.on; paint(); if (Sound.on) Sound.pop(); });
+}
+
+</script>
+<script>
+'use strict';
+/* ===== アンケートの質問 ===== */
+const QS = [
+  { id: 'dislike', label: '実は苦手な食べ物は？', ph: '例：トマト', type: 'text', who: '実は「{a}」が苦手なのは誰？', which: '{n}が実は苦手な食べ物は？' },
+  { id: 'hobby', label: '最近ハマってることは？', ph: '例：サウナ', type: 'text', who: '最近「{a}」にハマっているのは誰？', which: '{n}が最近ハマっていることは？' },
+  { id: 'dream', label: '子どもの頃の夢は？', ph: '例：パン屋さん', type: 'text', who: '子どもの頃の夢が「{a}」だったのは誰？', which: '{n}の子どもの頃の夢は？' },
+  { id: 'island', label: '無人島に1つだけ持っていくなら？', ph: '例：ナイフ', type: 'text', who: '無人島に「{a}」を持っていくのは誰？', which: '{n}が無人島に持っていくものは？' },
+  { id: 'animal', label: '自分を動物にたとえると？', ph: '例：ナマケモノ', type: 'text', who: '自分を「{a}」にたとえたのは誰？', which: '{n}が自分をたとえた動物は？' },
+  { id: 'buy', label: '人生で一番高い買い物は？（もの）', ph: '例：車', type: 'text', who: '人生で一番高い買い物が「{a}」なのは誰？', which: '{n}の人生で一番高い買い物は？' },
+  { id: 'secret', label: 'みんなが知らなそうな、ゆるい秘密', ph: '例：実はピアノが弾ける', type: 'text', who: '「{a}」という秘密があるのは誰？', which: null },
+  { id: 'photos', label: 'スマホの写真は何枚？（写真アプリで見てね）', ph: '例：3200', type: 'num', unit: '枚', q: '{n}のスマホに入っている写真は何枚？', k: 'ratio', tol: [0.02, 0.1, 0.25, 0.5], min: 0, max: 999999 },
+  { id: 'wake', label: '休みの日はだいたい何時に起きる？（9時半なら 9.5）', ph: '例：9.5', type: 'num', unit: '時', q: '{n}が休みの日に起きるのは何時ごろ？', k: 'abs', tol: [0, 0.5, 1, 2], min: 0, max: 24 },
+  { id: 'pref', label: '行ったことのある都道府県の数は？', ph: '例：25', type: 'num', unit: '都道府県', q: '{n}が行ったことのある都道府県はいくつ？', k: 'abs', tol: [0, 2, 5, 10], min: 0, max: 47 }
+];
+const QMAP = Object.fromEntries(QS.map(q => [q.id, q]));
+const TYPE_LABEL = { who: '誰でしょう', which: '本人の答えはどれ', num: '数字で答える' };
+const NUM_PTS = [20, 15, 10, 5];
+const SELF_PTS = 10;
+const KEYS = ['A', 'B', 'C', 'D'];
+const norm = s => String(s).replace(/\s+/g, '').toLowerCase();
+const parseNum = s => { const v = parseFloat(String(s).replace(/[,，\s]/g, '').replace(/[０-９．]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))); return isFinite(v) ? v : NaN; };
+const fmtNum = v => (Math.round(v * 100) / 100).toLocaleString('ja-JP');
+
+/* ===== 点数の計算 ===== */
+function speedBonus(t) { return t <= 2 ? 5 : t >= 12 ? 0 : Math.round(5 * (12 - t) / 10); }
+function numTier(q, guess) {
+  const d = Math.abs(guess - q.a);
+  const r = q.k === 'ratio' ? d / Math.max(1, Math.abs(q.a)) : d;
+  for (let i = 0; i < q.tol.length; i++) if (r <= q.tol[i] + 1e-9) return i;
+  return -1;
+}
+function scoreAnswer(q, me, ans, t) {
+  if (q.s === me) return { pts: SELF_PTS, kind: 'self' };
+  let pts = 0, ok = false, tier = -1;
+  if (q.t === 'num') { tier = ans == null ? -1 : numTier(q, ans); pts = tier >= 0 ? NUM_PTS[tier] : 0; ok = tier >= 0; }
+  else { ok = ans === q.a; pts = ok ? 10 + speedBonus(t) : 0; }
+  if (q.x2) pts *= 2;
+  return { pts, kind: ok ? 'ok' : 'ng', tier };
+}
+
+/* ===== クイズを作る ===== */
+function genQuiz(answers, count, rand) {
+  const names = Object.keys(answers);
+  const otherAnswers = (n, id, v) => {
+    const seen = new Set([norm(v)]), out = [];
+    names.forEach(m => { const x = answers[m][id]; if (m !== n && x && !seen.has(norm(x))) { seen.add(norm(x)); out.push(x); } });
+    return out;
+  };
+  const cands = [];
+  for (const n of names) for (const d of QS) {
+    const v = answers[n][d.id];
+    if (v == null || v === '') continue;
+    if (d.type === 'text') {
+      if (names.length >= 3) cands.push({ t: 'who', d, s: n });
+      if (d.which && otherAnswers(n, d.id, v).length >= 2) cands.push({ t: 'which', d, s: n });
+    } else if (isFinite(+v)) cands.push({ t: 'num', d, s: n });
+  }
+  const useS = {}, useD = {}, used = new Set(), picked = [];
+  while (picked.length < count) {
+    const pool = cands.filter(c => !used.has(c.s + '|' + c.d.id));
+    if (!pool.length) break;
+    pool.forEach(c => { c.w = (useS[c.s] || 0) * 10 + (useD[c.d.id] || 0) * 3 + rand() * 2.5 + (c.t === 'num' ? 0.8 : 0); });
+    pool.sort((a, b) => a.w - b.w);
+    const c = pool[0];
+    picked.push(c);
+    useS[c.s] = (useS[c.s] || 0) + 1; useD[c.d.id] = (useD[c.d.id] || 0) + 1; used.add(c.s + '|' + c.d.id);
+  }
+  const order = shuffle(picked, rand);
+  for (let i = 1; i < order.length; i++) {
+    if (order[i].s === order[i - 1].s || order[i].d.id === order[i - 1].d.id) {
+      const j = order.findIndex((c, k) => k > i && c.s !== order[i - 1].s && c.d.id !== order[i - 1].d.id);
+      if (j > 0) [order[i], order[j]] = [order[j], order[i]];
+    }
+  }
+  return order.map(c => {
+    const v = answers[c.s][c.d.id];
+    if (c.t === 'who') {
+      const ch = shuffle([c.s].concat(shuffle(names.filter(m => m !== c.s), rand).slice(0, 3)), rand);
+      return { t: 'who', s: c.s, d: c.d.id, q: c.d.who.replace('{a}', v), c: ch, a: ch.indexOf(c.s) };
+    }
+    if (c.t === 'which') {
+      const ch = shuffle([v].concat(shuffle(otherAnswers(c.s, c.d.id, v), rand).slice(0, 3)), rand);
+      return { t: 'which', s: c.s, d: c.d.id, q: c.d.which.replace('{n}', c.s), c: ch, a: ch.indexOf(v) };
+    }
+    return { t: 'num', s: c.s, d: c.d.id, q: c.d.q.replace('{n}', c.s), a: +v, u: c.d.unit, k: c.d.k, tol: c.d.tol };
+  });
+}
+
+/* ===== ホーム ===== */
+function home() {
+  $('#goHost').hidden = !store.get('tabi.quiz.host', null);
+  const pl = store.get('tabi.quiz.play', null);
+  $('#goJoin').querySelector('small').textContent = pl ? 'つづきから（' + pl.me + ' で参加中）' : '全員。幹事から届いた参加コードを貼りつける';
+  show('sHome');
+}
+$$('[data-home]').forEach(b => b.addEventListener('click', home));
+$('#goSurvey').addEventListener('click', openSurvey);
+$('#goJoin').addEventListener('click', () => { const pl = store.get('tabi.quiz.play', null); if (pl && pl.quiz) { PL = pl; renderPlay(); show('sPlay'); } else { $('#jPick').hidden = true; show('sJoin'); } });
+$('#goCollect').addEventListener('click', openCollect);
+$('#goHost').addEventListener('click', () => { HQ = store.get('tabi.quiz.host', null); if (HQ) { $('#hCode').value = HQ.text; show('sHostCode'); } });
+
+/* ===== アンケート ===== */
+const draft = Object.assign({ name: '', a: {} }, store.get('tabi.quiz.draft', {}));
+QS.forEach((q, i) => {
+  const inp = h('input', { id: 'sv_' + q.id, class: 'input', maxlength: q.type === 'num' ? '8' : '24', autocomplete: 'off', placeholder: q.ph, inputmode: q.type === 'num' ? 'decimal' : null, value: draft.a[q.id] || '' });
+  inp.addEventListener('input', () => { draft.a[q.id] = inp.value.trim(); saveDraft(); });
+  $('#svFields').append(h('div', { class: 'field' }, h('label', { for: 'sv_' + q.id }, h('span', { class: 'qn' }, 'Q' + (i + 1)), q.label), inp));
+});
+$('#sv_name').value = draft.name;
+$('#sv_name').addEventListener('input', () => { draft.name = $('#sv_name').value.trim(); saveDraft(); });
+function saveDraft() {
+  store.set('tabi.quiz.draft', draft);
+  const n = QS.filter(q => (draft.a[q.id] || '').trim()).length;
+  $('#svCount').textContent = '答えた数：' + n + ' / ' + QS.length + (n >= 5 ? '（OK）' : '（あと' + (5 - n) + '問）');
+  $('#svCount').classList.toggle('ok', n >= 5);
+}
+function openSurvey() { saveDraft(); $('#svDone').hidden = true; show('sSurvey'); }
+$('#surveyForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!draft.name) { toast('名前を入れてね'); $('#sv_name').focus(); return; }
+  const a = {};
+  for (const q of QS) {
+    const v = (draft.a[q.id] || '').trim();
+    if (!v) continue;
+    if (q.type === 'num') {
+      const n = parseNum(v);
+      if (isNaN(n) || n < q.min || n > q.max) { toast('「' + q.label + '」は数字で入れてね'); $('#sv_' + q.id).focus(); return; }
+      a[q.id] = n;
+    } else a[q.id] = v.slice(0, 24);
+  }
+  if (Object.keys(a).length < 5) { toast('5問以上答えてね'); return; }
+  const code = await encodeCode('MQA1', { v: 1, n: draft.name, a });
+  store.set('tabi.quiz.mycode', code);
+  $('#svCode').value = '【身内クイズ】' + draft.name + ' のアンケート回答\n' + code;
+  $('#svDone').hidden = false;
+  Sound.ding();
+  setTimeout(() => $('#svDone').scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+});
+$('#svCopy').addEventListener('click', () => copyText($('#svCode').value, $('#svCode')));
+$('#svShare').addEventListener('click', () => shareText($('#svCode').value, $('#svCode')));
+
+/* ===== 幹事：回答を集める ===== */
+let ANS = store.get('tabi.quiz.answers', {});
+let count = store.get('tabi.quiz.count', '12');
+bindSeg($('#optCount'), count, v => { count = v; store.set('tabi.quiz.count', v); });
+function openCollect() { $('#cMine').hidden = !store.get('tabi.quiz.mycode', null); renderCollect(); show('sCollect'); }
+function renderCollect() {
+  const names = Object.keys(ANS);
+  $('#cTitle').textContent = '集まった回答（' + names.length + '人）';
+  $('#cEmpty').hidden = names.length > 0;
+  const ul = $('#cList'); ul.textContent = '';
+  names.forEach(n => ul.append(h('li', {}, h('span', { class: 'nm' }, n), h('span', { class: 'cnt' }, Object.keys(ANS[n]).length + '問'),
+    h('button', { class: 'x', type: 'button', 'aria-label': n + 'の回答を外す', onclick: async () => { if (await ask(n + ' の回答を外す？', { ok: '外す', danger: true })) { delete ANS[n]; store.set('tabi.quiz.answers', ANS); renderCollect(); } } }, '×'))));
+}
+async function addCodes(text) {
+  const list = await decodeCodes(text, 'MQA1');
+  let added = 0;
+  list.forEach(r => { if (r && r.n && r.a) { ANS[String(r.n).slice(0, 10)] = r.a; added++; } });
+  store.set('tabi.quiz.answers', ANS);
+  renderCollect();
+  if (added) { toast(added + '人分の回答を追加した'); Sound.pop(); }
+  else toast(list.some(x => x && x.__error === 'old') ? 'iOSが古くて読めないみたい' : '回答コードが見つからなかった', 3000);
+  return added;
+}
+$('#cAdd').addEventListener('click', async () => { if (await addCodes($('#cPaste').value)) $('#cPaste').value = ''; });
+$('#cMine').addEventListener('click', () => addCodes(store.get('tabi.quiz.mycode', '')));
+
+/* ===== 幹事：プレビュー ===== */
+let DRAFTQ = null;
+$('#cGen').addEventListener('click', () => {
+  const names = Object.keys(ANS);
+  if (names.length < 3) { toast('3人以上の回答が必要だよ'); return; }
+  makePreview();
+});
+function makePreview() {
+  DRAFTQ = genQuiz(ANS, +count, Math.random);
+  DRAFTQ.forEach(q => { q.on = true; });
+  if (DRAFTQ.length < +count) toast('回答が少ないから ' + DRAFTQ.length + '問になったよ', 3000);
+  renderPreview();
+  show('sPreview');
+}
+function ansText(q) { return q.t === 'num' ? fmtNum(q.a) + q.u : q.c[q.a]; }
+function renderPreview() {
+  const on = DRAFTQ.filter(q => q.on);
+  const last = on[on.length - 1];
+  const ol = $('#pList'); ol.textContent = '';
+  let k = 0;
+  DRAFTQ.forEach(q => {
+    const li = h('li', { class: q.on ? '' : 'off', tabindex: '0', role: 'button', 'aria-pressed': String(q.on) },
+      h('div', { class: 'ph' }, h('span', {}, q.on ? '第' + (++k) + '問' : '外した'), h('span', { class: 'type' }, TYPE_LABEL[q.t]), q === last ? h('span', { class: 'x2' }, '2倍') : null),
+      h('span', { class: 'qt' }, q.q),
+      h('span', { class: 'ans' }, '正解：' + ansText(q)));
+    const toggle = () => { q.on = !q.on; renderPreview(); };
+    li.addEventListener('click', toggle);
+    li.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } });
+    ol.append(li);
+  });
+  $('#pOk').disabled = on.length < 3;
+}
+$('#pRe').addEventListener('click', makePreview);
+$('#pBack').addEventListener('click', openCollect);
+$('#pOk').addEventListener('click', async () => {
+  const qs = DRAFTQ.filter(q => q.on).map(q => { const c = Object.assign({}, q); delete c.on; delete c.w; return c; });
+  qs[qs.length - 1].x2 = true;
+  const quiz = { v: 1, id: randomId(6), n: Object.keys(ANS), q: qs };
+  const code = await encodeCode('MQP1', quiz);
+  HQ = { quiz, code, text: '【身内クイズ】参加コード（全' + qs.length + '問）\n' + code, at: 0, phase: 'ready', scores: {} };
+  store.set('tabi.quiz.host', HQ);
+  $('#hCode').value = HQ.text;
+  Sound.ding();
+  show('sHostCode');
+});
+$('#hCopy').addEventListener('click', () => copyText($('#hCode').value, $('#hCode')));
+$('#hShare').addEventListener('click', () => shareText($('#hCode').value, $('#hCode')));
+$('#hStart').addEventListener('click', () => { HQ = store.get('tabi.quiz.host', HQ); renderHost(); show('sHost'); Wake.on(); });
+
+/* ===== 幹事：進行 ===== */
+let HQ = null;
+const saveHQ = () => store.set('tabi.quiz.host', HQ);
+function renderHost() {
+  const qs = HQ.quiz.q, q = qs[HQ.at];
+  $('#hNo').textContent = '第' + (HQ.at + 1) + '問';
+  $('#hOf').textContent = '/ 全' + qs.length + '問';
+  $('#hX2').hidden = !q.x2;
+  $('#hType').textContent = TYPE_LABEL[q.t] + (q.t === 'num' ? '（' + q.u + '）' : '');
+  $('#hQ').textContent = q.q;
+  const box = $('#hChoices'); box.textContent = '';
+  if (q.c) q.c.forEach((c, i) => box.append(h('div', { class: 'choice', 'data-i': i }, h('span', { class: 'k' }, KEYS[i]), h('span', {}, c))));
+  const revealed = HQ.phase === 'revealed';
+  $('#hAnswer').hidden = !revealed;
+  if (revealed) showHostAnswer(q, false);
+  $('#hGo').hidden = HQ.phase !== 'ready';
+  $('#hReveal').hidden = HQ.phase !== 'started';
+  $('#hNext').hidden = !revealed;
+  $('#hNext').textContent = HQ.at + 1 >= qs.length ? '最終結果へ' : '次の問題へ';
+}
+function showHostAnswer(q, fresh) {
+  const a = $('#hAnswer'); a.textContent = '';
+  if (q.c) {
+    $$('#hChoices .choice').forEach(el => el.classList.toggle('correct', +el.dataset.i === q.a));
+    a.append(h('p', { class: 'answer-big' }, '正解は ' + KEYS[q.a] + '「' + q.c[q.a] + '」'));
+    if (q.t === 'which') a.append(h('p', { class: 'hint center m0' }, q.s + ' 本人の答えでした'));
+  } else {
+    a.append(h('p', { class: 'answer-big' }, '正解は ' + fmtNum(q.a) + q.u));
+    const t = q.tol, unit = q.k === 'ratio' ? '%' : q.u;
+    const show2 = v => q.k === 'ratio' ? Math.round(v * 100) + unit : '±' + v + unit;
+    a.append(h('p', { class: 'hint center m0' }, 'ピッタリ' + (q.x2 ? 40 : 20) + '点、' + show2(t[1]) + '以内' + (q.x2 ? 30 : 15) + '点、' + show2(t[2]) + '以内' + (q.x2 ? 20 : 10) + '点、' + show2(t[3]) + '以内' + (q.x2 ? 10 : 5) + '点' + (q.k === 'ratio' ? '（ズレの割合）' : '')));
+  }
+  a.append(h('p', { class: 'hint center m0' }, 'みんな、自分の画面で「答え合わせ」を押してね'));
+  if (fresh) Sound.fanfare();
+}
+$('#hGo').addEventListener('click', () => {
+  const cd = h('div', { class: 'cd', 'aria-live': 'assertive' }, h('span', {}, '3'));
+  document.body.append(cd);
+  let n = 3; Sound.tick();
+  const iv = setInterval(() => {
+    n--;
+    if (n > 0) { cd.firstChild.textContent = n; cd.firstChild.style.animation = 'none'; void cd.offsetWidth; cd.firstChild.style.animation = ''; Sound.tick(); }
+    else if (n === 0) { cd.firstChild.textContent = 'スタート！'; cd.firstChild.style.fontSize = '64px'; Sound.ding(); }
+    else { clearInterval(iv); cd.remove(); }
+  }, 750);
+  HQ.phase = 'started'; saveHQ(); renderHost();
+});
+$('#hReveal').addEventListener('click', () => {
+  Sound.drum(12);
+  $('#hReveal').disabled = true;
+  setTimeout(() => { $('#hReveal').disabled = false; HQ.phase = 'revealed'; saveHQ(); renderHost(); showHostAnswer(HQ.quiz.q[HQ.at], true); }, 1000);
+});
+$('#hNext').addEventListener('click', () => {
+  if (HQ.at + 1 >= HQ.quiz.q.length) { openScores(); return; }
+  HQ.at++; HQ.phase = 'ready'; saveHQ(); renderHost(); window.scrollTo(0, 0);
+});
+$('#hMenu').addEventListener('click', () => {
+  const list = h('ol', { class: 'preview' });
+  HQ.quiz.q.forEach((q, i) => list.append(h('li', { role: 'button', tabindex: '0', onclick: () => { HQ.at = i; HQ.phase = 'ready'; saveHQ(); renderHost(); $('.modal').remove(); } },
+    h('div', { class: 'ph' }, h('span', {}, '第' + (i + 1) + '問'), h('span', { class: 'type' }, TYPE_LABEL[q.t]), i === HQ.at ? h('span', { class: 'x2' }, 'いまここ') : null), h('span', { class: 'qt' }, q.q))));
+  sheet('問題の一覧（タップで移動）', h('div', { class: 'stack' }, list, h('button', { class: 'btn wide', type: 'button', onclick: () => { $('.modal').remove(); openScores(); } }, '点数の入力へ')));
+});
+
+/* ===== 幹事：得点入力とランキング ===== */
+function openScores() {
+  HQ.scores = HQ.scores || {};
+  HQ.quiz.n.concat(HQ.extra || []).forEach(n => { if (!(n in HQ.scores)) HQ.scores[n] = ''; });
+  saveHQ();
+  renderScores();
+  show('sScores');
+}
+function renderScores() {
+  const box = $('#scList'); box.textContent = '';
+  Object.keys(HQ.scores).forEach((n, i) => {
+    const inp = h('input', { id: 'sc' + i, class: 'input', inputmode: 'numeric', value: HQ.scores[n], 'aria-label': n + 'の点数', placeholder: '点数' });
+    inp.addEventListener('input', () => { HQ.scores[n] = inp.value; saveHQ(); });
+    box.append(h('label', { class: 'score-in' }, h('span', { class: 'nm' }, n), inp));
+  });
+}
+$('#scAdd').addEventListener('click', () => {
+  const n = $('#scNew').value.trim(); if (!n) return;
+  HQ.extra = (HQ.extra || []).concat(n);
+  if (!(n in HQ.scores)) HQ.scores[n] = '';
+  $('#scNew').value = ''; saveHQ(); renderScores();
+});
+$('#scBack').addEventListener('click', () => { renderHost(); show('sHost'); });
+let ranking = [], rAt = 0;
+$('#toRank').addEventListener('click', () => {
+  ranking = Object.entries(HQ.scores).map(([n, v]) => ({ n, s: parseNum(v) })).filter(r => !isNaN(r.s)).sort((a, b) => b.s - a.s);
+  if (ranking.length < 2) { toast('2人以上の点数を入れてね'); return; }
+  ranking.forEach((r, i) => { r.pos = i > 0 && r.s === ranking[i - 1].s ? ranking[i - 1].pos : i + 1; });
+  rAt = ranking.length - 1;
+  $('#rList').textContent = '';
+  $('#rTitle').textContent = 'いちばん仲間をわかってるのは誰だ';
+  $('#rNext').hidden = false;
+  $('#rNext').textContent = '次の順位を発表';
+  show('sRank');
+});
+$('#rNext').addEventListener('click', () => {
+  if (rAt < 0) return;
+  const r = ranking[rAt], top = r.pos === 1;
+  top ? Sound.drum() : Sound.pop();
+  setTimeout(() => {
+    $('#rList').prepend(h('li', { class: top ? 'top' : '' }, h('span', { class: 'pos' }, r.pos + '位'), h('span', { class: 'nm' }, r.n), h('span', { class: 'sc' }, r.s + '点')));
+    if (top) Sound.fanfare();
+  }, top ? 1300 : 0);
+  rAt--;
+  if (rAt < 0) { $('#rNext').hidden = true; setTimeout(() => { $('#rTitle').textContent = '優勝は ' + ranking.filter(x => x.pos === 1).map(x => x.n).join('、') + '！'; }, 1400); }
+  else $('#rNext').textContent = ranking[rAt].pos === 1 ? 'いよいよ1位を発表' : '次の順位を発表';
+});
+$('#rBack').addEventListener('click', () => show('sScores'));
+
+/* ===== プレイヤー ===== */
+let PL = null;
+const savePL = () => store.set('tabi.quiz.play', PL);
+let readQuiz = null;
+$('#jRead').addEventListener('click', async () => {
+  const list = await decodeCodes($('#jCode').value, 'MQP1');
+  const qz = list.find(x => x && x.q && x.n);
+  if (!qz) { toast(list.some(x => x && x.__error === 'old') ? 'iOSが古くて読めないみたい。iOSを更新してね' : 'コードが見つからなかった。メッセージ全体をコピーして貼りつけてね', 3500); return; }
+  readQuiz = qz;
+  const box = $('#jNames'); box.textContent = '';
+  qz.n.forEach(n => box.append(h('button', { class: 'btn wide', type: 'button', onclick: () => joinAs(n) }, n)));
+  $('#jPick').hidden = false;
+  setTimeout(() => $('#jPick').scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+});
+$('#jCode').addEventListener('paste', () => setTimeout(() => $('#jRead').click(), 50));
+$('#jOtherGo').addEventListener('click', () => { const n = $('#jOther').value.trim(); if (n) joinAs(n); else toast('名前を入れてね'); });
+async function joinAs(name) {
+  if (!(await ask(name + ' として参加する？', { ok: '参加する' }))) return;
+  PL = { quiz: readQuiz, me: name, i: 0, phase: 'wait', res: [] };
+  savePL();
+  Sound.fanfare();
+  renderPlay();
+  show('sPlay');
+}
+function totalOf() { return PL.res.reduce((a, r) => a + (r ? r.pts : 0), 0); }
+function renderPlay() {
+  const qs = PL.quiz.q;
+  $('#plName').textContent = PL.me;
+  $('#plScore').textContent = totalOf();
+  ['#plWait', '#plQ', '#plRes', '#plFinal'].forEach(s => $(s).hidden = true);
+  if (PL.i >= qs.length) {
+    $('#plFinal').hidden = false;
+    $('#plFinalScore').textContent = totalOf();
+    const ok = PL.res.filter(r => r && r.kind === 'ok').length;
+    $('#plBreak').textContent = '正解 ' + ok + ' 問 ／ 全' + qs.length + '問';
+    return;
+  }
+  const q = qs[PL.i];
+  const self = q.s === PL.me;
+  if (PL.phase === 'wait') {
+    $('#plWait').hidden = false;
+    $('#plNo').textContent = '第' + (PL.i + 1) + '問';
+    $('#plX2').hidden = !q.x2;
+    $('#plWaitText').textContent = '幹事の「スタート」の合図で開いてね';
+    $('#plOpen').textContent = '問題を開く';
+    return;
+  }
+  if (PL.phase === 'q' || PL.phase === 'locked') {
+    $('#plQ').hidden = false;
+    $('#plQNo').textContent = '第' + (PL.i + 1) + '問　' + TYPE_LABEL[q.t] + (q.x2 ? '（2倍）' : '');
+    $('#plText').textContent = q.q;
+    const box = $('#plChoices'); box.textContent = ''; box.classList.toggle('locked', PL.phase === 'locked');
+    $('#plNum').hidden = true; $('#plLocked').hidden = true;
+    if (self) {
+      PL.phase = 'locked';
+      $('#plLocked').hidden = false;
+      $('#plLockedText').textContent = 'これはあなたの問題！みんなの反応を楽しんでね（答えなくても ' + SELF_PTS + '点）';
+      if (q.c) q.c.forEach((c, i) => box.append(h('div', { class: 'choice' }, h('span', { class: 'k' }, KEYS[i]), h('span', {}, c))));
+      $('#plTime').hidden = true;
+      return;
+    }
+    $('#plTime').hidden = false;
+    if (q.c) {
+      q.c.forEach((c, i) => box.append(h('button', { class: 'choice' + (PL.ans === i ? ' picked' : ''), type: 'button', disabled: PL.phase === 'locked', onclick: () => lockAnswer(i) }, h('span', { class: 'k' }, KEYS[i]), h('span', {}, c))));
+    } else if (PL.phase === 'q') {
+      $('#plNum').hidden = false;
+      $('#plNumIn').value = '';
+      $('#plUnit').textContent = q.u;
+    }
+    if (PL.phase === 'locked') {
+      $('#plLocked').hidden = false;
+      $('#plLockedText').textContent = 'あなたの答え：' + (q.c ? KEYS[PL.ans] + '「' + q.c[PL.ans] + '」' : fmtNum(PL.ans) + q.u) + '（' + PL.t.toFixed(1) + '秒）';
+      $('#plTime').textContent = PL.t.toFixed(1) + '秒';
+    } else tickTime();
+    return;
+  }
+  if (PL.phase === 'checked') {
+    const r = PL.res[PL.i];
+    $('#plRes').hidden = false;
+    const box = $('#plResBox');
+    box.className = 'result-box ' + r.kind;
+    $('#plResBig').textContent = r.kind === 'self' ? '本人ボーナス' : r.kind === 'ok' ? (q.t === 'num' && r.tier === 0 ? 'ピッタリ！' : '正解！') : 'ざんねん';
+    $('#plResAns').textContent = '正解は ' + ansText(q) + (q.t === 'num' && r.kind !== 'self' ? '（あなた：' + fmtNum(PL.ans) + q.u + '）' : '');
+    $('#plResPts').textContent = '+' + r.pts + '点';
+    $('#plNext').textContent = PL.i + 1 >= qs.length ? '最終結果を見る' : '次の問題へ';
+  }
+}
+let tickId = 0;
+function tickTime() {
+  cancelAnimationFrame(tickId);
+  const loop = () => {
+    if (!PL || PL.phase !== 'q') return;
+    $('#plTime').textContent = ((performance.now() - PL.t0) / 1000).toFixed(1) + '秒';
+    tickId = requestAnimationFrame(loop);
+  };
+  loop();
+}
+$('#plOpen').addEventListener('click', () => {
+  PL.phase = 'q'; PL.t0 = performance.now(); PL.ans = null; PL.t = 0;
+  savePL(); Sound.pop(); renderPlay();
+});
+function lockAnswer(v) {
+  if (PL.phase !== 'q') return;
+  PL.t = Math.max(0, (performance.now() - PL.t0) / 1000);
+  PL.ans = v; PL.phase = 'locked';
+  savePL(); Sound.pop(); renderPlay();
+}
+$('#plNumGo').addEventListener('click', () => {
+  const v = parseNum($('#plNumIn').value);
+  if (isNaN(v)) { toast('数字を入れてね'); return; }
+  $('#plNumIn').blur();
+  lockAnswer(v);
+});
+$('#plNumIn').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('#plNumGo').click(); } });
+$('#plCheck').addEventListener('click', () => {
+  const q = PL.quiz.q[PL.i];
+  const r = scoreAnswer(q, PL.me, PL.ans, PL.t);
+  PL.res[PL.i] = r; PL.phase = 'checked'; savePL();
+  r.kind === 'ng' ? Sound.buzz() : Sound.ding();
+  renderPlay();
+});
+$('#plNext').addEventListener('click', () => {
+  PL.i++; PL.phase = 'wait'; PL.ans = null; savePL();
+  if (PL.i >= PL.quiz.q.length) Sound.fanfare();
+  renderPlay(); window.scrollTo(0, 0);
+});
+
+$('#helpBtn').addEventListener('click', () => sheet('身内クイズのルール', h('div', { class: 'stack', html: `
+<h3>事前（旅行の前）</h3>
+<ol>
+<li>全員「アンケートに答える」で答えて、できた回答コードを幹事にLINEで送る。</li>
+<li>幹事は「回答を集めてクイズを作る」に全員分のコードを貼って、クイズを作る。</li>
+</ol>
+<h3>当日</h3>
+<ol>
+<li>幹事が参加コードをLINEのグループに送る。みんなは「クイズに参加する」に貼って、自分の名前を選ぶ。</li>
+<li>幹事が「スタートの合図」を押したら、みんな自分の画面で「問題を開く」。</li>
+<li>みんな答えたら、幹事が「正解を発表」。みんなは自分の画面で「答え合わせ」を押す。</li>
+<li>全問おわったら、自分の合計点を幹事に伝えて、ランキング発表。</li>
+</ol>
+<h3>点数</h3>
+<ul>
+<li>選ぶ問題：正解で10点。早く答えるほどボーナス（2秒以内+5点、12秒で0点）。</li>
+<li>数字の問題：ピッタリ20点、近いほど高得点（15・10・5点）。</li>
+<li>自分のことが問題になった時は、答えなくても10点。</li>
+<li>最後の問題は得点2倍。</li>
+</ul>
+<h3>ネットについて</h3>
+<p>コードを読みこんだあとは、ネットがなくても最後まで遊べるよ。</p>` })));
+
+home();
+</script>
+</body>
+</html>

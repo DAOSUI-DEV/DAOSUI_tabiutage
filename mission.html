@@ -1,0 +1,944 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1d2d5c">
+<title>秘密ミッション</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* 旅宴ゲーム 共通スタイル
+   旅館の夜：藍の浴衣 × 生ビールの金 × 木札。
+   レイアウト：上に細いヘッダー、中央にゲーム、下に親指で押せる大きな操作ボタン */
+:root{
+  --bg:#eef0f6;
+  --surface:#ffffff;
+  --surface-2:#e3e7f2;
+  --fg:#151c36;
+  --muted:#59627f;
+  --line:#c9cfe2;
+  --ai:#22356b;
+  --on-ai:#ffffff;
+  --gold:#e3a20d;
+  --gold-soft:#fbecc2;
+  --on-gold:#2b1d00;
+  --wood:#ead8b3;
+  --wood-edge:#c4a46c;
+  --on-wood:#2a2014;
+  --primary:#22356b;
+  --on-primary:#ffffff;
+  --good:#17804f;
+  --good-soft:#d9f2e5;
+  --bad:#c3352b;
+  --bad-soft:#fbe1de;
+  --head-bg:#1d2d5c;
+  --head-fg:#f3f5fb;
+  --scrim:rgba(13,20,48,.55);
+  --paper:#ffffff;
+  --shadow:0 1px 2px rgba(21,28,54,.08),0 8px 24px rgba(21,28,54,.08);
+  --f-display:"Dela Gothic One","Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP","Noto Sans CJK JP",sans-serif;
+  --f-body:"Hiragino Maru Gothic ProN","Zen Maru Gothic","Hiragino Sans","Noto Sans JP","Noto Sans CJK JP",system-ui,sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1430;--surface:#162047;--surface-2:#1f2b5a;--fg:#eef1fb;--muted:#a2abc9;--line:#2e3c74;
+    --ai:#9db1f0;--on-ai:#0b1230;--gold:#f4bb2a;--gold-soft:#3b300f;--on-gold:#1f1500;
+    --wood:#3d3323;--wood-edge:#6a5534;--on-wood:#f4e7cc;--primary:#9db1f0;--on-primary:#0b1230;
+    --good:#43c98e;--good-soft:#123a2a;--bad:#ff7466;--bad-soft:#47201d;--head-bg:#0a1026;--head-fg:#eef1fb;
+    --scrim:rgba(0,0,0,.6);--paper:#ffffff;--shadow:none;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d1430;--surface:#162047;--surface-2:#1f2b5a;--fg:#eef1fb;--muted:#a2abc9;--line:#2e3c74;
+  --ai:#9db1f0;--on-ai:#0b1230;--gold:#f4bb2a;--gold-soft:#3b300f;--on-gold:#1f1500;
+  --wood:#3d3323;--wood-edge:#6a5534;--on-wood:#f4e7cc;--primary:#9db1f0;--on-primary:#0b1230;
+  --good:#43c98e;--good-soft:#123a2a;--bad:#ff7466;--bad-soft:#47201d;--head-bg:#0a1026;--head-fg:#eef1fb;
+  --scrim:rgba(0,0,0,.6);--paper:#ffffff;--shadow:none;color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.6;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--head-bg)}
+[hidden]{display:none!important}
+img{max-width:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+/* ヘッダー */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;align-items:center;gap:8px;min-height:52px;background:var(--head-bg);color:var(--head-fg);padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));border-bottom:3px solid var(--gold)}
+.bar-title{flex:1;margin:0;font-family:var(--f-display);font-weight:400;font-size:19px;letter-spacing:.04em;line-height:1.2;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-back,.bar-btn{flex:0 0 auto;min-width:64px;min-height:36px;display:inline-flex;align-items:center;justify-content:center;padding:4px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.28);background:transparent;color:var(--head-fg);font-size:13px;text-decoration:none}
+.bar-back::before{content:"";width:8px;height:8px;border-left:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin-right:6px}
+
+/* 本体 */
+.wrap{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 40px}
+.screen{display:flex;flex-direction:column;gap:16px}
+.fill-app{height:100%;display:flex;flex-direction:column}
+.fill-app .wrap{flex:1;min-height:0;width:100%;display:flex;flex-direction:column}
+.fill-app .screen.fill{flex:1;min-height:0}
+
+.eyebrow{margin:0;font-size:12px;letter-spacing:.14em;color:var(--muted);font-weight:700}
+.h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:24px;line-height:1.3;text-wrap:balance}
+.h3{margin:0;font-size:17px;font-weight:700;line-height:1.4}
+.lead{margin:0;color:var(--muted);font-size:15px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.center{text-align:center}
+.num{font-variant-numeric:tabular-nums}
+.stack{display:flex;flex-direction:column;gap:10px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row > *{min-width:0}
+.spacer{flex:1}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px}
+.panel-title{margin:0;font-size:14px;font-weight:700;color:var(--muted);letter-spacing:.06em}
+
+/* ボタン */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:10px 18px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font-weight:700;font-size:16px;line-height:1.3;text-align:center;text-decoration:none;user-select:none;-webkit-user-select:none;transition:transform .08s ease,filter .15s ease}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.45;pointer-events:none}
+.btn.primary{background:var(--primary);color:var(--on-primary);border-color:transparent}
+.btn.gold{background:var(--gold);color:var(--on-gold);border-color:transparent}
+.btn.danger{background:var(--bad);color:#fff;border-color:transparent}
+.btn.ghost{background:transparent}
+.btn.big{width:100%;min-height:60px;font-size:18px;border-radius:16px}
+.btn.wide{width:100%}
+.btn.sm{min-height:36px;padding:6px 12px;font-size:14px;border-radius:10px}
+.actions{display:flex;flex-direction:column;gap:10px}
+
+/* 入力 */
+.field{display:flex;flex-direction:column;gap:6px}
+.field > label,.label{font-size:14px;font-weight:700}
+.input,.textarea{width:100%;min-height:48px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:17px;line-height:1.5}
+.textarea{min-height:110px;resize:vertical;font-size:15px;word-break:break-all}
+.input:focus,.textarea:focus{border-color:var(--ai);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--ai) 25%,transparent)}
+.hint{margin:0;font-size:13px;color:var(--muted)}
+
+/* セグメント */
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{flex:1 1 auto;min-height:42px;padding:6px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-size:15px;font-weight:700;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ai);border-color:var(--ai);color:var(--on-ai)}
+
+/* 人数ステッパー */
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.stepper button{width:48px;height:44px;border:0;background:transparent;font-size:22px;font-weight:700}
+.stepper output{min-width:56px;text-align:center;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.names{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.name-in{min-width:0;display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding-left:10px}
+.name-in span{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:1.4em}
+.name-in input{flex:1;min-width:0;width:100%;border:0;background:transparent;min-height:42px;font-size:16px;padding:4px 8px 4px 0}
+.name-in input:focus{outline:none}
+.name-in:focus-within{border-color:var(--ai)}
+
+/* ピル・バッジ */
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;background:var(--surface-2);font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.pill.gold{background:var(--gold);color:var(--on-gold)}
+.pill.warn{background:var(--bad);color:#fff}
+.tag{display:inline-block;padding:2px 8px;border-radius:6px;background:var(--gold-soft);color:var(--fg);font-size:12px;font-weight:700}
+
+/* 大きな名前表示 */
+.big-name{font-family:var(--f-display);font-weight:400;font-size:clamp(34px,11vw,52px);line-height:1.2;text-align:center;word-break:break-all;margin:0}
+
+/* モーダル */
+.modal{position:fixed;inset:0;z-index:50;background:var(--scrim);display:flex;align-items:flex-end;justify-content:center;padding:16px;padding-bottom:max(16px,env(safe-area-inset-bottom,0px))}
+.modal-card{width:100%;max-width:520px;max-height:85vh;overflow:auto;background:var(--surface);color:var(--fg);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px;animation:rise .18s ease-out}
+.modal-msg{margin:0;font-size:17px;line-height:1.6;white-space:pre-wrap}
+.modal-actions{display:flex;gap:10px}
+.modal-actions .btn{flex:1}
+.rules h3{margin:8px 0 0;font-size:16px}
+.rules p,.rules ul,.rules ol{margin:0;font-size:15px}
+.rules ul,.rules ol{padding-left:1.3em}
+.rules li+li{margin-top:4px}
+@keyframes rise{from{transform:translateY(16px);opacity:.4}to{transform:none;opacity:1}}
+
+/* トースト */
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);z-index:60;max-width:calc(100% - 32px);padding:10px 16px;border-radius:12px;background:var(--fg);color:var(--bg);font-size:14px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* コード表示 */
+.code-box{font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.4;min-height:84px;max-height:140px;word-break:break-all}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+
+.m0{margin:0}
+.choice-big{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:16px 18px;min-height:72px}
+.choice-big small{font-weight:500;font-size:13px;opacity:.85}
+.gid{font-family:var(--f-display);letter-spacing:.12em;font-size:20px}
+
+/* ミッションカード */
+.mcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px}
+.mhead{display:flex;align-items:center;gap:8px}
+.stars{color:var(--gold);font-size:18px;letter-spacing:2px}
+.pts{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.secret{position:relative;min-height:78px;border-radius:12px;background:var(--ai);color:var(--on-ai);display:flex;align-items:center;justify-content:center;padding:12px 14px;text-align:center;font-weight:700;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;touch-action:manipulation;cursor:pointer}
+.secret .txt{visibility:hidden;font-size:18px;line-height:1.5}
+.secret .cover{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;letter-spacing:.06em}
+.secret.peek{background:var(--gold-soft);color:var(--fg)}
+.secret.peek .txt{visibility:visible}
+.secret.peek .cover{display:none}
+.mstate{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;padding:4px 10px;border-radius:999px;font-size:13px;font-weight:700}
+.chip.done{background:var(--good-soft);color:var(--good)}
+.chip.busted{background:var(--bad-soft);color:var(--bad)}
+.mcard.done{border-color:var(--good)}
+.mcard.busted{opacity:.75}
+.scorebar{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:var(--r);background:var(--head-bg);color:var(--head-fg)}
+.scorebar b{font-family:var(--f-display);font-weight:400;font-size:30px;font-variant-numeric:tabular-nums}
+.scorebar .bd{font-size:12px;opacity:.85}
+
+/* 告発 */
+.plist{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.plist .btn{min-height:56px;word-break:break-all}
+.cand{display:flex;flex-direction:column;gap:8px}
+.cand label{display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--surface);font-size:15px;line-height:1.5}
+.cand input{margin-top:4px;width:20px;height:20px;flex:0 0 auto;accent-color:var(--ai)}
+.cand label:has(input:checked){border-color:var(--ai);box-shadow:0 0 0 2px var(--ai)}
+.acc-log{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.acc-log li{display:flex;gap:8px;align-items:baseline}
+.acc-log .ok{color:var(--good);font-weight:700}
+.acc-log .ng{color:var(--bad);font-weight:700}
+
+/* 答え合わせ */
+.jcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:10px}
+.jhead{display:flex;align-items:center;gap:8px}
+.jhead .nm{font-weight:700;font-size:18px;word-break:break-all;flex:1;min-width:0}
+.jhead .tot{font-family:var(--f-display);font-size:20px;font-variant-numeric:tabular-nums}
+.jm{display:flex;flex-direction:column;gap:6px;padding:10px;border-radius:10px;background:var(--surface-2)}
+.jm p{margin:0;font-weight:700;line-height:1.5}
+.jm .seg button{min-height:36px;font-size:13px}
+.jm .seg button[data-v="1"][aria-pressed="true"]{background:var(--good);border-color:var(--good);color:#fff}
+.jm .seg button[data-v="2"][aria-pressed="true"]{background:var(--bad);border-color:var(--bad);color:#fff}
+.accrow{display:flex;align-items:center;gap:10px}
+
+/* ランキング発表 */
+.ranks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.ranks li{display:grid;grid-template-columns:3em minmax(0,1fr) auto;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--line);animation:rise .4s ease-out}
+.ranks .pos{font-family:var(--f-display);font-size:20px;color:var(--muted)}
+.ranks .nm{font-weight:700;font-size:18px;word-break:break-all}
+.ranks .sc{font-weight:700;font-variant-numeric:tabular-nums}
+.ranks li.top{background:var(--gold);color:var(--on-gold);border-color:transparent}
+.ranks li.top .pos{color:var(--on-gold)}
+.ranks li.top .nm{font-family:var(--f-display);font-weight:400;font-size:24px}
+</style>
+</head>
+<body>
+<header class="bar">
+  <a class="bar-back" href="index.html">トップ</a>
+  <h1 class="bar-title">秘密ミッション</h1>
+  <button class="bar-btn" id="helpBtn" type="button">ルール</button>
+</header>
+
+<main class="wrap">
+  <!-- ホーム -->
+  <section id="sHome" class="screen">
+    <div class="stack">
+      <p class="eyebrow">全員が自分のスマホで遊ぶゲーム</p>
+      <h2 class="h2">宴会のあいだ、こっそり指令をこなせ</h2>
+      <p class="lead">1人に3つずつ秘密のミッションが配られる。バレずに達成すると得点。怪しい人を見つけたら「告発」して、当たれば自分の得点になるよ。</p>
+    </div>
+    <div id="joinedBox" class="panel" hidden>
+      <p class="panel-title">参加中のゲーム</p>
+      <p class="m0" id="joinedText"></p>
+      <button class="btn primary" id="openMine" type="button">自分のミッションを見る</button>
+    </div>
+    <div class="actions">
+      <button class="btn big primary choice-big" id="goJoin" type="button">参加する<small>幹事から届いた参加コードを貼りつける</small></button>
+      <button class="btn big choice-big" id="goCreate" type="button">幹事：ゲームを作る<small>メンバーを入力して、参加コードを作る</small></button>
+      <button class="btn wide ghost" id="goHost" type="button" hidden>幹事メニュー（参加コード・答え合わせ）</button>
+    </div>
+  </section>
+
+  <!-- 作成 -->
+  <section id="sCreate" class="screen" hidden>
+    <div class="stack"><p class="eyebrow">幹事</p><h2 class="h2">ゲームを作る</h2>
+    <p class="lead">参加する全員の名前を入れてね。告発の時に名前を選ぶから、みんながわかる呼び方がいいよ。</p></div>
+    <div class="panel"><p class="panel-title">メンバー</p><div id="players" class="stack"></div></div>
+    <div class="panel">
+      <p class="panel-title">ミッションのジャンル</p>
+      <div class="seg" id="optCat"><button type="button" data-v="party">宴会中</button><button type="button" data-v="trip">旅行中</button><button type="button" data-v="both">両方まぜる</button></div>
+      <p class="hint" id="catHint"></p>
+    </div>
+    <button class="btn big primary" id="makeCode" type="button">参加コードを作る</button>
+  </section>
+
+  <!-- 参加コード（幹事） -->
+  <section id="sCode" class="screen" hidden>
+    <div class="stack"><p class="eyebrow">幹事</p><h2 class="h2">参加コードができた</h2>
+    <p class="lead">このコードをLINEのグループに送って、みんなにこのページの「参加する」から貼りつけてもらってね。</p></div>
+    <div class="panel">
+      <div class="row"><span class="label">ゲームID</span><span class="gid" id="cGid"></span></div>
+      <textarea class="textarea code-box" id="cCode" readonly aria-label="参加コード"></textarea>
+      <div class="row">
+        <button class="btn primary" id="cShare" type="button">LINEなどで送る</button>
+        <button class="btn" id="cCopy" type="button">コピー</button>
+      </div>
+      <p class="hint">ゲームIDは全員の画面に出るよ。同じIDなら同じゲームに参加できてる。</p>
+    </div>
+    <div class="actions">
+      <button class="btn big gold" id="cJoinSelf" type="button">幹事も参加する</button>
+      <button class="btn wide" id="cJudge" type="button">答え合わせ（宴会の最後に）</button>
+      <button class="btn wide ghost" id="cHome" type="button">はじめの画面へ</button>
+    </div>
+  </section>
+
+  <!-- 参加 -->
+  <section id="sJoin" class="screen" hidden>
+    <div class="stack"><p class="eyebrow">参加する</p><h2 class="h2">参加コードを貼りつける</h2>
+    <p class="lead">幹事から届いたメッセージを長押しでコピーして、下に貼りつけてね。前後に余計な文字が入っても大丈夫。</p></div>
+    <textarea class="textarea code-box" id="jCode" placeholder="SM1. ではじまるコード" aria-label="参加コード"></textarea>
+    <button class="btn big primary" id="jRead" type="button">読みこむ</button>
+    <div id="jPick" class="panel" hidden>
+      <div class="row"><span class="label">ゲームID</span><span class="gid" id="jGid"></span></div>
+      <p class="h3 m0">自分の名前を選んでね</p>
+      <div class="plist" id="jNames"></div>
+      <p class="hint">選ぶとミッションが決まるよ。他の人の名前を選ぶのは反則！</p>
+    </div>
+  </section>
+
+  <!-- 自分のミッション -->
+  <section id="sMine" class="screen" hidden>
+    <div class="row"><div class="stack" style="gap:2px;flex:1"><p class="eyebrow m0">ゲームID <span id="mGid" class="num"></span></p><h2 class="h2" id="mTitle">あなたのミッション</h2></div></div>
+    <div class="scorebar"><span>いまの得点</span><span class="spacer"></span><span class="bd" id="mBreak"></span><b id="mScore">0</b></div>
+    <p class="hint">押している間だけミッションが見えるよ。まわりに見られないように気をつけて。</p>
+    <div class="stack" id="mCards"></div>
+    <div class="panel">
+      <p class="panel-title">告発</p>
+      <p class="m0 small">怪しい人のミッションを当てたら +2点、はずれたら −1点。1人1回、全部で3回まで。</p>
+      <button class="btn primary" id="mAccuse" type="button">告発する</button>
+      <ul class="acc-log" id="mLog"></ul>
+    </div>
+    <button class="btn wide ghost" id="mHome" type="button">はじめの画面へ</button>
+  </section>
+
+  <!-- 告発 -->
+  <section id="sAccuse" class="screen" hidden>
+    <div class="stack"><p class="eyebrow">告発</p><h2 class="h2" id="aTitle">誰が怪しい？</h2></div>
+    <div id="aStep1" class="plist"></div>
+    <div id="aStep2" class="stack" hidden>
+      <p class="m0" id="aQ"></p>
+      <div class="cand" id="aCands" role="radiogroup"></div>
+      <button class="btn big primary" id="aGo" type="button">これで告発する</button>
+    </div>
+    <button class="btn wide ghost" id="aBack" type="button">やめる</button>
+  </section>
+
+  <!-- 答え合わせ -->
+  <section id="sJudge" class="screen" hidden>
+    <div class="stack"><p class="eyebrow">答え合わせ</p><h2 class="h2">みんなのミッションを発表</h2>
+    <p class="lead">1人ずつ「発表」を押して、本人に達成したか聞いていこう。告発でもらった点は、本人の画面の点数を聞いて入れてね。</p></div>
+    <div class="stack" id="jList"></div>
+    <button class="btn big gold" id="toRank" type="button">ランキング発表へ</button>
+  </section>
+
+  <!-- ランキング -->
+  <section id="sRank" class="screen" hidden>
+    <div class="stack"><p class="eyebrow">結果発表</p><h2 class="h2" id="rTitle">ミッション王は誰だ</h2></div>
+    <ol class="ranks" id="rList"></ol>
+    <button class="btn big gold" id="rNext" type="button">次の順位を発表</button>
+    <button class="btn wide ghost" id="rBack" type="button">答え合わせにもどる</button>
+  </section>
+</main>
+
+<script>
+/* 旅宴ゲーム 共通スクリプト（ネット不要で動く部品だけ） */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+function h(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue;
+    if (k === 'class') e.className = v;
+    else if (k === 'text') e.textContent = v;
+    else if (k === 'html') e.innerHTML = v;
+    else if (k.startsWith('on') && typeof v === 'function') e.addEventListener(k.slice(2), v);
+    else if (k === 'style') e.style.cssText = v;
+    else e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const kid of kids.flat(Infinity)) {
+    if (kid == null || kid === false) continue;
+    e.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+  }
+  return e;
+}
+
+/* 端末内の保存（使えない環境でも落ちない） */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+};
+
+/* 合言葉から毎回同じ乱数を作る */
+function hashStr(str) {
+  let h1 = 1779033703, h2 = 3144134277, h3 = 1013904242, h4 = 2773480762;
+  for (let i = 0, k; i < str.length; i++) {
+    k = str.charCodeAt(i);
+    h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
+    h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
+    h3 = h4 ^ Math.imul(h3 ^ k, 951274213);
+    h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
+  }
+  h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
+  h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+  return ((h1 ^ h2) >>> 0);
+}
+function rng(seed) {
+  let a = typeof seed === 'number' ? seed >>> 0 : hashStr(String(seed));
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function shuffle(arr, rand = Math.random) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function pick(arr, rand = Math.random) { return arr[Math.floor(rand() * arr.length)]; }
+function randomId(len = 6) {
+  const cs = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = '';
+  const buf = new Uint32Array(len);
+  (window.crypto || {}).getRandomValues ? crypto.getRandomValues(buf) : buf.forEach((_, i) => buf[i] = Math.random() * 1e9);
+  for (let i = 0; i < len; i++) s += cs[buf[i] % cs.length];
+  return s;
+}
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/* LINEで送れる「コード」にする（圧縮→base64url、最後に ~） */
+function b64u(bytes) {
+  let s = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function unb64u(str) {
+  str = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (str.length % 4) str += '=';
+  const bin = atob(str);
+  const b = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i);
+  return b;
+}
+async function pipeBytes(bytes, stream) {
+  const s = new Blob([bytes]).stream().pipeThrough(stream);
+  return new Uint8Array(await new Response(s).arrayBuffer());
+}
+async function encodeCode(prefix, obj) {
+  const raw = new TextEncoder().encode(JSON.stringify(obj));
+  if (typeof CompressionStream !== 'undefined') {
+    try {
+      const z = await pipeBytes(raw, new CompressionStream('deflate-raw'));
+      if (z.length < raw.length) return prefix + '.z' + b64u(z) + '~';
+    } catch (e) {}
+  }
+  return prefix + '.r' + b64u(raw) + '~';
+}
+/* 貼り付けた文章からコードを全部取り出す（LINEの名前や時刻が混ざってもOK） */
+async function decodeCodes(text, prefix) {
+  const flat = String(text || '').replace(/\s+/g, '');
+  const re = new RegExp(prefix.replace(/\./g, '\\.') + '\\.([zr])([A-Za-z0-9_-]+)~', 'g');
+  const out = [];
+  let m;
+  while ((m = re.exec(flat))) {
+    try {
+      let bytes = unb64u(m[2]);
+      if (m[1] === 'z') {
+        if (typeof DecompressionStream === 'undefined') throw new Error('old');
+        bytes = await pipeBytes(bytes, new DecompressionStream('deflate-raw'));
+      }
+      out.push(JSON.parse(new TextDecoder().decode(bytes)));
+    } catch (e) { out.push({ __error: e.message === 'old' ? 'old' : 'broken' }); }
+  }
+  return out;
+}
+
+/* 画面の切り替え */
+function show(id) {
+  $$('.screen').forEach(s => { s.hidden = s.id !== id; });
+  window.scrollTo(0, 0);
+}
+
+/* トースト・確認ダイアログ（ブラウザの confirm は使わない） */
+function toast(msg, ms = 2200) {
+  let t = $('#toast');
+  if (!t) { t = h('div', { id: 'toast', class: 'toast', role: 'status', 'aria-live': 'polite' }); document.body.append(t); }
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), ms);
+}
+function ask(msg, opt = {}) {
+  const { ok = 'OK', cancel = 'やめる', danger = false } = opt;
+  return new Promise(res => {
+    const prev = document.activeElement;
+    const close = v => { dlg.remove(); if (prev && prev.focus) prev.focus(); res(v); };
+    const okBtn = h('button', { class: 'btn ' + (danger ? 'danger' : 'primary'), onclick: () => close(true) }, ok);
+    const dlg = h('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', onclick: e => { if (e.target === dlg && cancel) close(false); } },
+      h('div', { class: 'modal-card' },
+        h('p', { class: 'modal-msg' }, msg),
+        h('div', { class: 'modal-actions' }, cancel ? h('button', { class: 'btn', onclick: () => close(false) }, cancel) : null, okBtn)));
+    document.body.append(dlg);
+    okBtn.focus();
+  });
+}
+function sheet(title, bodyNode) {
+  const dlg = h('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': title, onclick: e => { if (e.target === dlg) dlg.remove(); } },
+    h('div', { class: 'modal-card rules' },
+      h('h2', { class: 'h2' }, title),
+      bodyNode,
+      h('button', { class: 'btn primary wide', onclick: () => dlg.remove() }, 'とじる')));
+  document.body.append(dlg);
+  $('button', dlg).focus();
+}
+
+/* コピー・共有 */
+async function copyText(text, fallbackEl) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('コピーした！LINEに貼りつけて送ってね');
+    return true;
+  } catch (e) {
+    if (fallbackEl) { fallbackEl.focus(); fallbackEl.select(); try { fallbackEl.setSelectionRange(0, text.length); } catch (_) {} }
+    toast('自動でコピーできなかったから、文字を長押しして「コピー」してね', 3600);
+    return false;
+  }
+}
+async function shareText(text, fallbackEl) {
+  if (navigator.share) {
+    try { await navigator.share({ text }); return true; }
+    catch (e) { if (e && e.name === 'AbortError') return false; }
+  }
+  return copyText(text, fallbackEl);
+}
+
+/* 効果音（最初のタップ後に鳴る） */
+const Sound = (() => {
+  let ctx = null;
+  let on = store.get('tabi.sound', true);
+  function ac() {
+    if (!on) return null;
+    if (!ctx) { const C = window.AudioContext || window.webkitAudioContext; if (!C) return null; try { ctx = new C(); } catch (e) { return null; } }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+  function tone(freq, dur = 0.12, type = 'sine', vol = 0.2, when = 0) {
+    const c = ac(); if (!c) return;
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.value = freq;
+    const t = c.currentTime + when;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(c.destination);
+    o.start(t); o.stop(t + dur + 0.03);
+  }
+  function noise(dur = 0.3, vol = 0.2, freq = 1000, when = 0) {
+    const c = ac(); if (!c) return;
+    const len = Math.floor(c.sampleRate * dur);
+    const buf = c.createBuffer(1, len, c.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = c.createBufferSource(); src.buffer = buf;
+    const f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = 0.8;
+    const g = c.createGain(); g.gain.value = vol;
+    src.connect(f).connect(g).connect(c.destination);
+    src.start(c.currentTime + when);
+  }
+  return {
+    get on() { return on; },
+    set on(v) { on = !!v; store.set('tabi.sound', on); },
+    unlock() { ac(); },
+    tick() { tone(880, 0.05, 'square', 0.05); },
+    pop() { tone(660, 0.07, 'triangle', 0.12); },
+    ding() { tone(988, 0.14, 'sine', 0.2); tone(1319, 0.28, 'sine', 0.16, 0.11); },
+    buzz() { tone(150, 0.4, 'sawtooth', 0.12); },
+    splash() { noise(0.28, 0.22, 800); },
+    fanfare() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i === 3 ? 0.5 : 0.18, 'triangle', 0.18, i * 0.12)); },
+    drum(n = 18) { for (let i = 0; i < n; i++) noise(0.06, 0.08 + i * 0.008, 180 + i * 6, i * 0.07); }
+  };
+})();
+document.addEventListener('pointerdown', () => Sound.unlock(), { once: true });
+
+/* 画面が暗くならないようにする（使えない端末では何もしない） */
+const Wake = {
+  want: false, lock: null,
+  async on() { this.want = true; if (this.lock && !this.lock.released) return; try { if ('wakeLock' in navigator && document.visibilityState === 'visible') this.lock = await navigator.wakeLock.request('screen'); } catch (e) {} },
+  off() { this.want = false; try { this.lock && this.lock.release(); } catch (e) {} this.lock = null; }
+};
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Wake.want) Wake.on(); });
+
+/* タイマー */
+class Countdown {
+  constructor(sec, onTick, onEnd) { this.total = sec; this.onTick = onTick; this.onEnd = onEnd; this.t0 = 0; this.id = 0; this.lastWhole = null; }
+  start() {
+    this.t0 = performance.now();
+    this.stop();
+    const loop = () => {
+      const left = Math.max(0, this.total - (performance.now() - this.t0) / 1000);
+      const whole = Math.ceil(left);
+      if (whole !== this.lastWhole) { this.lastWhole = whole; this.onTick && this.onTick(whole, left); }
+      if (left <= 0) { this.id = 0; this.onEnd && this.onEnd(); return; }
+      this.id = requestAnimationFrame(loop);
+    };
+    this.id = requestAnimationFrame(loop);
+    return this;
+  }
+  stop() { if (this.id) cancelAnimationFrame(this.id); this.id = 0; }
+}
+
+/* セグメント（選択ボタン） */
+function bindSeg(el, value, onChange) {
+  const btns = $$('button', el);
+  const set = v => { btns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(v)))); };
+  set(value);
+  btns.forEach(b => b.addEventListener('click', () => { set(b.dataset.v); onChange(b.dataset.v); }));
+  return set;
+}
+
+/* 参加者の入力（全ゲームで名前を共有） */
+function PlayerEditor(root, opt = {}) {
+  const min = opt.min || 2, max = opt.max || 16;
+  let names = store.get('tabi.players', null);
+  let count = names ? clamp(names.length, min, max) : (opt.def || 10);
+  names = (names || []).slice(0, max);
+  const out = h('output', { class: 'num', 'aria-live': 'polite' }, count);
+  const grid = h('div', { class: 'names' });
+  function render() {
+    out.textContent = count;
+    grid.textContent = '';
+    for (let i = 0; i < count; i++) {
+      const inp = h('input', { id: (opt.idPrefix || 'p') + i, type: 'text', maxlength: '10', placeholder: (i + 1) + '番目の人', value: names[i] || '', autocomplete: 'off', enterkeyhint: 'next', 'aria-label': (i + 1) + '人目の名前' });
+      inp.addEventListener('input', () => { names[i] = inp.value.trim(); save(); });
+      grid.append(h('label', { class: 'name-in' }, h('span', {}, i + 1), inp));
+    }
+  }
+  function save() { store.set('tabi.players', names.slice(0, count)); }
+  const minus = h('button', { type: 'button', 'aria-label': '1人へらす', onclick: () => { if (count > min) { count--; render(); save(); } } }, '−');
+  const plus = h('button', { type: 'button', 'aria-label': '1人ふやす', onclick: () => { if (count < max) { count++; render(); save(); } } }, '+');
+  root.append(
+    h('div', { class: 'row' }, h('span', { class: 'label' }, '人数'), h('div', { class: 'stepper' }, minus, out, plus), h('span', { class: 'hint' }, '名前は空でもOK')),
+    grid);
+  render();
+  return {
+    get list() {
+      const seen = {};
+      return Array.from({ length: count }, (_, i) => {
+        let n = (names[i] || '').trim() || ((i + 1) + '番目の人');
+        if (seen[n]) { seen[n]++; n = n + seen[n]; } else seen[n] = 1;
+        return n;
+      });
+    }
+  };
+}
+
+/* ゲーム単体で開いた時用：オフライン対応（GitHub Pages などで有効、使えない環境では何もしない） */
+try {
+  if ('serviceWorker' in navigator && location.protocol === 'https:' && !/claude\.ai|claudeusercontent|anthropic/.test(location.hostname)) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+} catch (e) {}
+
+/* 音のON/OFFボタン */
+function bindSoundBtn(btn) {
+  if (!btn) return;
+  const paint = () => { btn.textContent = Sound.on ? '音あり' : '音なし'; btn.setAttribute('aria-pressed', String(Sound.on)); };
+  paint();
+  btn.addEventListener('click', () => { Sound.on = !Sound.on; paint(); if (Sound.on) Sound.pop(); });
+}
+
+</script>
+<script>
+'use strict';
+/* ミッション（レベル0=★ 1点、1=★★ 3点、2=★★★ 5点） */
+const MISSIONS = {
+  party: [
+    ['誰かとハイタッチする','誰かに「それな」と言わせる','誰かに料理を取り分けてあげる','誰かに「ありがとう」と言わせる','誰かにおしぼりかティッシュを渡す','誰かに自分の写真を撮ってもらう','誰かに水かお茶をすすめる','誰かの持ち物か服をほめる','誰かと2人だけでグラスを合わせて乾杯する','誰かに「明日何時に起きる？」と聞く','誰かの話に「天才じゃん」と言う','誰かと同じメニューを頼む','誰かに注文を代わりにしてもらう','誰かとグータッチする','誰かに「わかる〜」と言わせる','誰かの隣の席に移動する','誰かに「おいしい」と言わせる','誰かに好きな食べ物を聞く'],
+    ['全員の名前を1回ずつ呼ぶ','誰かに「マジで？」を3回言わせる','誰かに「え、なんで？」と言わせる','誰かと「せーの」で同じポーズをして写真を撮る','誰かに今の時間を聞かれる','誰かと席を交換する','誰かと指相撲をする','誰かに「ちょっと待って」と言わせる','誰かに小学生の頃の話をさせる','3人以上で同時に「いただきます」か「ごちそうさま」を言う','誰かに「スマホの写真見せて」と言わせる','誰かに自分が飲んでいるものを聞かれる','誰かにじゃんけんを挑まれる','誰かに「懐かしい」と言わせる','誰かに最近買ったものを聞いて、それをほめる','誰かに「眠い」と言わせる','誰かに「声大きい」とつっこまれる','誰かに「ひと口ちょうだい」と言わせる'],
+    ['誰かにあだ名をつけて、別の誰かにもそのあだ名で呼ばせる','自分から頼まずに、乾杯の音頭を誰かにとらせる','誰かに自分のモノマネをさせる','誰かに歌を1フレーズ歌わせる','誰かに「（自分の名前）っぽいね」と言わせる','誰かに来年の目標を言わせる','誰かに初恋の話をさせる','誰かに「今の話もう1回して」と言わせる','自分が言ったフレーズを、誰かに真似して言わせる','自分から言い出さずに、3人以上で写真を撮る流れを作る','誰かに自分の好きな食べ物を当てさせる','誰かに早口言葉を言わせる','自分からはふらずに、誰かに「今日の服いいね」と言わせる','誰かに自分のいいところを言わせる','誰かと2人で別の席に移動して5分話す','誰かに次の遊びを提案させる','誰かに立ち上がって何かを発表させる','誰かに「それ秘密ね」と言わせる']
+  ],
+  trip: [
+    ['誰かと自撮りをする','誰かにお菓子を1つあげる','誰かに「楽しいね」と言わせる','誰かの写真を撮ってあげる','誰かのカバンを少し持ってあげる','移動中に誰かの隣に座る','誰かに景色の写真を撮らせる','誰かと同じものを買う','誰かに「お腹すいた」と言わせる','誰かと「せーの」で同時にジャンプする','ご当地の名物を誰かに教える','自販機で誰かと同じ飲み物を買う','誰かの髪型か服をほめる','誰かに「寒い」と言わせる','誰かに道か方向を確認する','誰かに「次どこ行く？」と聞く','誰かと看板の前でポーズをとる','誰かにのど飴かガムをあげる'],
+    ['誰かに「写真撮って」と頼まれる','誰かに「次どこ行く？」と聞かれる','集合写真で全員にピースさせる','お店か宿の人と3往復以上話す','誰かにお土産を選んでもらう','誰かと2人だけで5分歩く','誰かに自分の荷物を持ってもらう','誰かと一緒にご当地のものを食べる','誰かに「すごい」を2回言わせる','誰かに昔の旅行の思い出話をさせる','誰かに自分の写真を3枚以上撮らせる','誰かの手袋かマフラーを借りる','誰かに「どっちがいいと思う？」と聞かれる','誰かに「疲れた」と言わせる','誰かと同じポーズで写真を撮る','誰かに「いい景色」と言わせる','誰かにおすすめのお土産を聞かれる','誰かに温泉か宿の感想を言わせる'],
+    ['3人以上に同じお土産を買わせる','自分から言わずに、誰かに「集合写真撮ろう」と言わせる','誰かに「また来年もここに来よう」と言わせる','地元の人におすすめを聞いて、みんなでそこに行く','誰かに変顔写真を撮らせてもらう','誰かに「ここに住みたい」と言わせる','誰かにご当地キャラか看板と同じポーズで写真を撮らせる','寄り道に誘って、誰かの予定を変えさせる','誰かに方言か地元の言葉を使わせる','誰かに「これ買おうかな」と言わせて、実際に買わせる','誰かに「写真送って」と言わせる','自分が選んだ食べ物を誰かに「おいしい」と言わせる','誰かと2人で記念写真を撮って、グループに送らせる','誰かに今回の旅行を「最高」と言わせる','誰かに歌を口ずさませる','誰かに自分のおすすめの場所へ行こうと言わせる','誰かに「今日一番楽しかったこと」を言わせる','誰かに道案内を頼まれる']
+  ]
+};
+const PTS = [1, 3, 5];
+const STARS = ['★', '★★', '★★★'];
+const ACC_OK = 2, ACC_NG = -1, ACC_MAX = 3;
+const CAT_LABEL = { party: '宴会中', trip: '旅行中', both: '両方' };
+const CAT_HINT = { party: '飲み会の席でこなすミッション。乾杯前に配るのがおすすめ。', trip: '観光や移動の間にこなすミッション。旅の初日の朝に配るのがおすすめ。', both: '旅行中と宴会中のミッションがまざる。旅の最初に配って、宴会の最後に答え合わせ。' };
+
+const pool = (cat, lvl) => cat === 'both' ? MISSIONS.party[lvl].concat(MISSIONS.trip[lvl]) : MISSIONS[cat][lvl];
+function gameId(g) { return (hashStr(g.s) % 46656).toString(36).toUpperCase().padStart(3, '0') + '-' + g.n.length; }
+function assign(g) {
+  const out = {};
+  [0, 1, 2].forEach(lvl => {
+    const p = pool(g.c, lvl);
+    const order = shuffle(p.map((_, i) => i), rng(g.s + ':' + lvl));
+    g.n.forEach((name, i) => { (out[name] = out[name] || [])[lvl] = { lvl, text: p[order[i % order.length]] }; });
+  });
+  return out;
+}
+function candidates(g, me, target) {
+  const all = assign(g)[target];
+  const mine = all.map(m => m.text);
+  const others = [0, 1, 2].flatMap(l => pool(g.c, l)).filter(t => !mine.includes(t));
+  const r = rng(g.s + ':acc:' + me + ':' + target);
+  return shuffle(mine.concat(shuffle(others, r).slice(0, 5)), r);
+}
+
+let GAME = null, ME = null, ST = null;
+const pKey = (g, me) => 'tabi.mission.p.' + g.s + '.' + (me || ME);
+const jKey = g => 'tabi.mission.judge.' + g.s;
+
+/* ===== ホーム ===== */
+function home() {
+  const joined = store.get('tabi.mission.joined', null);
+  $('#joinedBox').hidden = !joined;
+  if (joined) $('#joinedText').textContent = 'ゲームID ' + gameId(joined.g) + '　' + joined.me + ' として参加中';
+  $('#goHost').hidden = !store.get('tabi.mission.host', null);
+  show('sHome');
+}
+$('#openMine').addEventListener('click', () => { const j = store.get('tabi.mission.joined', null); if (j) openMine(j.g, j.me); });
+$('#goJoin').addEventListener('click', () => { $('#jPick').hidden = true; show('sJoin'); });
+$('#goCreate').addEventListener('click', () => show('sCreate'));
+$('#goHost').addEventListener('click', () => { const hst = store.get('tabi.mission.host', null); if (hst) showCode(hst.g, hst.code); });
+$('#mHome').addEventListener('click', home);
+$('#cHome').addEventListener('click', home);
+
+/* ===== 作成 ===== */
+const editor = PlayerEditor($('#players'), { def: 10, min: 3, max: 16 });
+let cat = store.get('tabi.mission.cat', 'party');
+bindSeg($('#optCat'), cat, v => { cat = v; store.set('tabi.mission.cat', v); $('#catHint').textContent = CAT_HINT[v]; });
+$('#catHint').textContent = CAT_HINT[cat];
+$('#makeCode').addEventListener('click', async () => {
+  const g = { v: 1, s: randomId(8), c: cat, n: editor.list };
+  const code = await encodeCode('SM1', g);
+  store.set('tabi.mission.host', { g, code });
+  Sound.ding();
+  showCode(g, code);
+});
+function showCode(g, code) {
+  $('#cGid').textContent = gameId(g);
+  $('#cCode').value = '【秘密ミッション】参加コード（ゲームID ' + gameId(g) + '）\n' + code;
+  show('sCode');
+}
+$('#cCopy').addEventListener('click', () => copyText($('#cCode').value, $('#cCode')));
+$('#cShare').addEventListener('click', () => shareText($('#cCode').value, $('#cCode')));
+$('#cJoinSelf').addEventListener('click', () => { const hst = store.get('tabi.mission.host', null); if (hst) pickName(hst.g); });
+$('#cJudge').addEventListener('click', async () => {
+  const hst = store.get('tabi.mission.host', null); if (!hst) return;
+  if (await ask('答え合わせを開くと、全員のミッションが見えるようになるよ。宴会の最後に開いてね。', { ok: '開く' })) openJudge(hst.g);
+});
+
+/* ===== 参加 ===== */
+$('#jRead').addEventListener('click', async () => {
+  const list = await decodeCodes($('#jCode').value, 'SM1');
+  const g = list.find(x => x && x.s && Array.isArray(x.n));
+  if (!g) {
+    toast(list.some(x => x && x.__error === 'old') ? 'iOSが古くて読めないみたい。iOSを更新してね' : 'コードが見つからなかった。メッセージ全体をコピーして貼りつけてね', 3500);
+    return;
+  }
+  pickName(g);
+});
+$('#jCode').addEventListener('paste', () => setTimeout(() => $('#jRead').click(), 50));
+function pickName(g) {
+  $('#jGid').textContent = gameId(g);
+  const box = $('#jNames'); box.textContent = '';
+  g.n.forEach(name => box.append(h('button', { class: 'btn', type: 'button', onclick: async () => {
+    if (!(await ask(name + ' として参加する？\nあとから変えられないよ。', { ok: name + 'で参加' }))) return;
+    store.set('tabi.mission.joined', { g, me: name });
+    Sound.fanfare();
+    openMine(g, name);
+  } }, name)));
+  $('#jPick').hidden = false;
+  show('sJoin');
+  $('#jPick').hidden = false;
+  setTimeout(() => $('#jPick').scrollIntoView({ behavior: 'smooth', block: 'start' }), 50);
+}
+
+/* ===== 自分のミッション ===== */
+function openMine(g, me) {
+  GAME = g; ME = me;
+  ST = Object.assign({ status: ['', '', ''], acc: [] }, store.get(pKey(g), {}));
+  $('#mGid').textContent = gameId(g);
+  $('#mTitle').textContent = me + ' のミッション';
+  renderMine();
+  Wake.off();
+  show('sMine');
+}
+const saveST = () => store.set(pKey(GAME), ST);
+function scoreOf(st) {
+  const m = st.status.reduce((a, s, i) => a + (s === 'done' ? PTS[i] : 0), 0);
+  const a = st.acc.reduce((s, x) => s + (x.ok ? ACC_OK : ACC_NG), 0);
+  return { m, a, total: m + a };
+}
+function renderMine() {
+  const ms = assign(GAME)[ME];
+  const box = $('#mCards'); box.textContent = '';
+  ms.forEach((m, i) => {
+    const s = ST.status[i];
+    const sec = h('div', { class: 'secret', tabindex: '0', role: 'button', 'aria-label': STARS[i] + 'のミッション。押している間だけ表示' },
+      h('span', { class: 'txt' }, m.text),
+      h('span', { class: 'cover' }, '長押しで見る'));
+    const on = e => { e.preventDefault(); sec.classList.add('peek'); };
+    const off = () => sec.classList.remove('peek');
+    sec.addEventListener('pointerdown', on);
+    ['pointerup', 'pointerleave', 'pointercancel', 'blur'].forEach(ev => sec.addEventListener(ev, off));
+    sec.addEventListener('keydown', e => { if (e.key === ' ' || e.key === 'Enter') on(e); });
+    sec.addEventListener('keyup', off);
+    sec.addEventListener('contextmenu', e => e.preventDefault());
+    const state = h('div', { class: 'mstate' });
+    if (s === 'done') state.append(h('span', { class: 'chip done' }, '達成 +' + PTS[i] + '点'), h('button', { class: 'btn sm ghost', type: 'button', onclick: () => setStatus(i, '') }, '取り消す'));
+    else if (s === 'busted') state.append(h('span', { class: 'chip busted' }, 'バレた（0点）'), h('button', { class: 'btn sm ghost', type: 'button', onclick: () => setStatus(i, '') }, '取り消す'));
+    else state.append(
+      h('button', { class: 'btn sm primary', type: 'button', onclick: async () => { if (await ask(STARS[i] + ' のミッションを達成した？', { ok: '達成した！' })) { setStatus(i, 'done'); Sound.fanfare(); } } }, '達成した！'),
+      h('button', { class: 'btn sm', type: 'button', onclick: async () => { if (await ask(STARS[i] + ' のミッションが告発で当てられた？\nこのミッションは失敗になるよ。', { ok: 'バレた…', danger: true })) { setStatus(i, 'busted'); Sound.buzz(); } } }, 'バレた…'));
+    box.append(h('div', { class: 'mcard ' + s },
+      h('div', { class: 'mhead' }, h('span', { class: 'stars', 'aria-label': 'むずかしさ' + (i + 1) }, STARS[i]), h('span', { class: 'pts' }, PTS[i] + '点')),
+      sec, state));
+  });
+  const sc = scoreOf(ST);
+  $('#mScore').textContent = sc.total;
+  $('#mBreak').textContent = 'ミッション ' + sc.m + ' ／ 告発 ' + (sc.a >= 0 ? '+' : '') + sc.a;
+  const left = ACC_MAX - ST.acc.length;
+  $('#mAccuse').disabled = left <= 0;
+  $('#mAccuse').textContent = left > 0 ? '告発する（のこり' + left + '回）' : '告発は使い切った';
+  const log = $('#mLog'); log.textContent = '';
+  ST.acc.forEach(a => log.append(h('li', {}, h('span', { class: a.ok ? 'ok' : 'ng' }, a.ok ? '正解 +' + ACC_OK : 'はずれ ' + ACC_NG), h('span', {}, a.target + '：' + a.text))));
+}
+function setStatus(i, s) { ST.status[i] = s; saveST(); renderMine(); }
+
+/* ===== 告発 ===== */
+let aTarget = null;
+$('#mAccuse').addEventListener('click', () => {
+  aTarget = null;
+  const done = ST.acc.map(a => a.target);
+  const box = $('#aStep1'); box.textContent = '';
+  GAME.n.filter(n => n !== ME).forEach(n => box.append(h('button', { class: 'btn', type: 'button', disabled: done.includes(n), onclick: () => accuseStep2(n) }, n + (done.includes(n) ? '（告発ずみ）' : ''))));
+  $('#aTitle').textContent = '誰が怪しい？';
+  $('#aStep1').hidden = false; $('#aStep2').hidden = true;
+  show('sAccuse');
+});
+function accuseStep2(target) {
+  aTarget = target;
+  $('#aTitle').textContent = target + ' を告発';
+  $('#aQ').textContent = target + ' がやっていると思うミッションを1つ選んでね。この中に本物が3つまざってるよ。';
+  const box = $('#aCands'); box.textContent = '';
+  candidates(GAME, ME, target).forEach((t, i) => box.append(h('label', {}, h('input', { type: 'radio', name: 'cand', value: t, id: 'cand' + i }), h('span', {}, t))));
+  $('#aStep1').hidden = true; $('#aStep2').hidden = false;
+  window.scrollTo(0, 0);
+}
+$('#aGo').addEventListener('click', async () => {
+  const sel = $('input[name="cand"]:checked');
+  if (!sel) { toast('ミッションを1つ選んでね'); return; }
+  if (!(await ask(aTarget + ' のミッションは\n「' + sel.value + '」\nで告発する？', { ok: '告発する' }))) return;
+  const real = assign(GAME)[aTarget].map(m => m.text);
+  const ok = real.includes(sel.value);
+  ST.acc.push({ target: aTarget, text: sel.value, ok });
+  saveST();
+  if (ok) { Sound.fanfare(); await ask('正解！ +' + ACC_OK + '点\n\n' + aTarget + ' に「バレたよ」と伝えてね。' + aTarget + ' は自分の画面でそのミッションの「バレた…」を押す。（もう達成ずみなら、そのままでOK）', { ok: 'OK', cancel: null }); }
+  else { Sound.buzz(); await ask('はずれ… ' + ACC_NG + '点\n\n' + aTarget + ' にはバレてないことにしておこう。', { ok: 'OK', cancel: null }); }
+  renderMine(); show('sMine');
+});
+$('#aBack').addEventListener('click', () => { if (!$('#aStep2').hidden) { $('#aStep1').hidden = false; $('#aStep2').hidden = true; $('#aTitle').textContent = '誰が怪しい？'; } else show('sMine'); });
+
+/* ===== 答え合わせ（幹事） ===== */
+let J = null;
+function openJudge(g) {
+  GAME = g;
+  const ms = assign(g);
+  J = Object.assign({ marks: {}, acc: {}, open: {} }, store.get(jKey(g), {}));
+  g.n.forEach(n => { J.marks[n] = J.marks[n] || [0, 0, 0]; J.acc[n] = J.acc[n] || 0; });
+  const list = $('#jList'); list.textContent = '';
+  g.n.forEach(n => {
+    const tot = h('span', { class: 'tot num' });
+    const body = h('div', { class: 'stack' });
+    const openBtn = h('button', { class: 'btn sm primary', type: 'button' }, '発表');
+    const paint = () => { tot.textContent = judgeScore(n) + '点'; };
+    const fill = () => {
+      body.textContent = '';
+      ms[n].forEach((m, i) => {
+        const seg = h('div', { class: 'seg' }, h('button', { type: 'button', 'data-v': '1' }, '達成'), h('button', { type: 'button', 'data-v': '0' }, '未達成'), h('button', { type: 'button', 'data-v': '2' }, 'バレた'));
+        bindSeg(seg, J.marks[n][i], v => { J.marks[n][i] = +v; saveJ(); paint(); if (+v === 1) Sound.pop(); });
+        body.append(h('div', { class: 'jm' }, h('p', {}, h('span', { class: 'stars' }, STARS[i]), ' ', m.text), seg));
+      });
+      const out = h('output', { class: 'num' }, (J.acc[n] > 0 ? '+' : '') + J.acc[n]);
+      const stp = d => () => { J.acc[n] = clamp(J.acc[n] + d, -3, 6); out.textContent = (J.acc[n] > 0 ? '+' : '') + J.acc[n]; saveJ(); paint(); };
+      body.append(h('div', { class: 'accrow' }, h('span', { class: 'label' }, '告発の点'), h('span', { class: 'spacer' }), h('div', { class: 'stepper' }, h('button', { type: 'button', 'aria-label': '1点へらす', onclick: stp(-1) }, '−'), out, h('button', { type: 'button', 'aria-label': '1点ふやす', onclick: stp(1) }, '+'))));
+      openBtn.hidden = true;
+    };
+    openBtn.addEventListener('click', () => { J.open[n] = true; saveJ(); fill(); Sound.drum(10); });
+    if (J.open[n]) fill();
+    paint();
+    list.append(h('div', { class: 'jcard' }, h('div', { class: 'jhead' }, h('span', { class: 'nm' }, n), tot, openBtn), body));
+  });
+  show('sJudge');
+}
+const saveJ = () => store.set(jKey(GAME), J);
+function judgeScore(n) { return J.marks[n].reduce((a, v, i) => a + (v === 1 ? PTS[i] : 0), 0) + J.acc[n]; }
+
+/* ===== ランキング発表 ===== */
+let ranking = [], rAt = 0;
+$('#toRank').addEventListener('click', () => {
+  ranking = GAME.n.map(n => ({ n, s: judgeScore(n) })).sort((a, b) => b.s - a.s);
+  ranking.forEach((r, i) => { r.pos = i > 0 && r.s === ranking[i - 1].s ? ranking[i - 1].pos : i + 1; });
+  rAt = ranking.length - 1;
+  $('#rList').textContent = '';
+  $('#rTitle').textContent = 'ミッション王は誰だ';
+  $('#rNext').hidden = false;
+  show('sRank');
+  Wake.on();
+});
+$('#rNext').addEventListener('click', () => {
+  if (rAt < 0) return;
+  const r = ranking[rAt];
+  const isTop = r.pos === 1;
+  if (isTop) Sound.drum(); else Sound.pop();
+  setTimeout(() => {
+    $('#rList').prepend(h('li', { class: isTop ? 'top' : '' }, h('span', { class: 'pos' }, r.pos + '位'), h('span', { class: 'nm' }, r.n), h('span', { class: 'sc' }, r.s + '点')));
+    if (isTop) Sound.fanfare();
+  }, isTop ? 1300 : 0);
+  rAt--;
+  if (rAt < 0) { $('#rNext').hidden = true; setTimeout(() => { $('#rTitle').textContent = 'ミッション王は ' + ranking.filter(x => x.pos === 1).map(x => x.n).join('、') + '！'; }, 1400); }
+  else $('#rNext').textContent = ranking[rAt].pos === 1 ? 'いよいよ1位を発表' : '次の順位を発表';
+});
+$('#rBack').addEventListener('click', () => openJudge(GAME));
+
+$('#helpBtn').addEventListener('click', () => sheet('秘密ミッションのルール', h('div', { class: 'stack', html: `
+<h3>準備（幹事）</h3>
+<ol>
+<li>「幹事：ゲームを作る」でメンバーを入れて、参加コードを作る。</li>
+<li>コードをLINEのグループに送る。</li>
+<li>みんなは「参加する」にコードを貼って、自分の名前を選ぶ。</li>
+</ol>
+<h3>あそびかた</h3>
+<ul>
+<li>1人に3つのミッション（★1点・★★3点・★★★5点）が配られる。押している間だけ見える。</li>
+<li>ミッションを達成したら「達成した！」を押す。誰にも気づかれないようにやるのがコツ。</li>
+<li>怪しい人を見つけたら「告発」。その人のミッションを8つの候補から選んで、当たれば +2点、はずれたら −1点。1人につき1回、全部で3回まで。</li>
+<li>告発で当てられたミッションは失敗。言われた人は「バレた…」を押す（もう達成ずみなら、そのままでOK）。</li>
+</ul>
+<h3>答え合わせ（宴会の最後）</h3>
+<ul>
+<li>幹事が「答え合わせ」を開いて、1人ずつミッションを発表していく。</li>
+<li>本人の画面の点数を聞きながら、達成・告発の点を入れて「ランキング発表」。</li>
+</ul>
+<h3>ネットについて</h3>
+<p>最初にページを開いてコードを読みこめば、そのあとはネットがなくても遊べるよ。</p>` })));
+
+home();
+</script>
+</body>
+</html>

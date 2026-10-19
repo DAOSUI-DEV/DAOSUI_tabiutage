@@ -1,0 +1,1145 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1d2d5c">
+<title>こぼすなビール</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<style>
+/* 旅宴ゲーム 共通スタイル
+   旅館の夜：藍の浴衣 × 生ビールの金 × 木札。
+   レイアウト：上に細いヘッダー、中央にゲーム、下に親指で押せる大きな操作ボタン */
+:root{
+  --bg:#eef0f6;
+  --surface:#ffffff;
+  --surface-2:#e3e7f2;
+  --fg:#151c36;
+  --muted:#59627f;
+  --line:#c9cfe2;
+  --ai:#22356b;
+  --on-ai:#ffffff;
+  --gold:#e3a20d;
+  --gold-soft:#fbecc2;
+  --on-gold:#2b1d00;
+  --wood:#ead8b3;
+  --wood-edge:#c4a46c;
+  --on-wood:#2a2014;
+  --primary:#22356b;
+  --on-primary:#ffffff;
+  --good:#17804f;
+  --good-soft:#d9f2e5;
+  --bad:#c3352b;
+  --bad-soft:#fbe1de;
+  --head-bg:#1d2d5c;
+  --head-fg:#f3f5fb;
+  --scrim:rgba(13,20,48,.55);
+  --paper:#ffffff;
+  --shadow:0 1px 2px rgba(21,28,54,.08),0 8px 24px rgba(21,28,54,.08);
+  --f-display:"Dela Gothic One","Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP","Noto Sans CJK JP",sans-serif;
+  --f-body:"Hiragino Maru Gothic ProN","Zen Maru Gothic","Hiragino Sans","Noto Sans JP","Noto Sans CJK JP",system-ui,sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1430;--surface:#162047;--surface-2:#1f2b5a;--fg:#eef1fb;--muted:#a2abc9;--line:#2e3c74;
+    --ai:#9db1f0;--on-ai:#0b1230;--gold:#f4bb2a;--gold-soft:#3b300f;--on-gold:#1f1500;
+    --wood:#3d3323;--wood-edge:#6a5534;--on-wood:#f4e7cc;--primary:#9db1f0;--on-primary:#0b1230;
+    --good:#43c98e;--good-soft:#123a2a;--bad:#ff7466;--bad-soft:#47201d;--head-bg:#0a1026;--head-fg:#eef1fb;
+    --scrim:rgba(0,0,0,.6);--paper:#ffffff;--shadow:none;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d1430;--surface:#162047;--surface-2:#1f2b5a;--fg:#eef1fb;--muted:#a2abc9;--line:#2e3c74;
+  --ai:#9db1f0;--on-ai:#0b1230;--gold:#f4bb2a;--gold-soft:#3b300f;--on-gold:#1f1500;
+  --wood:#3d3323;--wood-edge:#6a5534;--on-wood:#f4e7cc;--primary:#9db1f0;--on-primary:#0b1230;
+  --good:#43c98e;--good-soft:#123a2a;--bad:#ff7466;--bad-soft:#47201d;--head-bg:#0a1026;--head-fg:#eef1fb;
+  --scrim:rgba(0,0,0,.6);--paper:#ffffff;--shadow:none;color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.6;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--head-bg)}
+[hidden]{display:none!important}
+img{max-width:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+/* ヘッダー */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;align-items:center;gap:8px;min-height:52px;background:var(--head-bg);color:var(--head-fg);padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));border-bottom:3px solid var(--gold)}
+.bar-title{flex:1;margin:0;font-family:var(--f-display);font-weight:400;font-size:19px;letter-spacing:.04em;line-height:1.2;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-back,.bar-btn{flex:0 0 auto;min-width:64px;min-height:36px;display:inline-flex;align-items:center;justify-content:center;padding:4px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.28);background:transparent;color:var(--head-fg);font-size:13px;text-decoration:none}
+.bar-back::before{content:"";width:8px;height:8px;border-left:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin-right:6px}
+
+/* 本体 */
+.wrap{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 40px}
+.screen{display:flex;flex-direction:column;gap:16px}
+.fill-app{height:100%;display:flex;flex-direction:column}
+.fill-app .wrap{flex:1;min-height:0;width:100%;display:flex;flex-direction:column}
+.fill-app .screen.fill{flex:1;min-height:0}
+
+.eyebrow{margin:0;font-size:12px;letter-spacing:.14em;color:var(--muted);font-weight:700}
+.h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:24px;line-height:1.3;text-wrap:balance}
+.h3{margin:0;font-size:17px;font-weight:700;line-height:1.4}
+.lead{margin:0;color:var(--muted);font-size:15px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.center{text-align:center}
+.num{font-variant-numeric:tabular-nums}
+.stack{display:flex;flex-direction:column;gap:10px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row > *{min-width:0}
+.spacer{flex:1}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px}
+.panel-title{margin:0;font-size:14px;font-weight:700;color:var(--muted);letter-spacing:.06em}
+
+/* ボタン */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:10px 18px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font-weight:700;font-size:16px;line-height:1.3;text-align:center;text-decoration:none;user-select:none;-webkit-user-select:none;transition:transform .08s ease,filter .15s ease}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.45;pointer-events:none}
+.btn.primary{background:var(--primary);color:var(--on-primary);border-color:transparent}
+.btn.gold{background:var(--gold);color:var(--on-gold);border-color:transparent}
+.btn.danger{background:var(--bad);color:#fff;border-color:transparent}
+.btn.ghost{background:transparent}
+.btn.big{width:100%;min-height:60px;font-size:18px;border-radius:16px}
+.btn.wide{width:100%}
+.btn.sm{min-height:36px;padding:6px 12px;font-size:14px;border-radius:10px}
+.actions{display:flex;flex-direction:column;gap:10px}
+
+/* 入力 */
+.field{display:flex;flex-direction:column;gap:6px}
+.field > label,.label{font-size:14px;font-weight:700}
+.input,.textarea{width:100%;min-height:48px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:17px;line-height:1.5}
+.textarea{min-height:110px;resize:vertical;font-size:15px;word-break:break-all}
+.input:focus,.textarea:focus{border-color:var(--ai);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--ai) 25%,transparent)}
+.hint{margin:0;font-size:13px;color:var(--muted)}
+
+/* セグメント */
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{flex:1 1 auto;min-height:42px;padding:6px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-size:15px;font-weight:700;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ai);border-color:var(--ai);color:var(--on-ai)}
+
+/* 人数ステッパー */
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.stepper button{width:48px;height:44px;border:0;background:transparent;font-size:22px;font-weight:700}
+.stepper output{min-width:56px;text-align:center;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.names{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.name-in{min-width:0;display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding-left:10px}
+.name-in span{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:1.4em}
+.name-in input{flex:1;min-width:0;width:100%;border:0;background:transparent;min-height:42px;font-size:16px;padding:4px 8px 4px 0}
+.name-in input:focus{outline:none}
+.name-in:focus-within{border-color:var(--ai)}
+
+/* ピル・バッジ */
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;background:var(--surface-2);font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.pill.gold{background:var(--gold);color:var(--on-gold)}
+.pill.warn{background:var(--bad);color:#fff}
+.tag{display:inline-block;padding:2px 8px;border-radius:6px;background:var(--gold-soft);color:var(--fg);font-size:12px;font-weight:700}
+
+/* 大きな名前表示 */
+.big-name{font-family:var(--f-display);font-weight:400;font-size:clamp(34px,11vw,52px);line-height:1.2;text-align:center;word-break:break-all;margin:0}
+
+/* モーダル */
+.modal{position:fixed;inset:0;z-index:50;background:var(--scrim);display:flex;align-items:flex-end;justify-content:center;padding:16px;padding-bottom:max(16px,env(safe-area-inset-bottom,0px))}
+.modal-card{width:100%;max-width:520px;max-height:85vh;overflow:auto;background:var(--surface);color:var(--fg);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px;animation:rise .18s ease-out}
+.modal-msg{margin:0;font-size:17px;line-height:1.6;white-space:pre-wrap}
+.modal-actions{display:flex;gap:10px}
+.modal-actions .btn{flex:1}
+.rules h3{margin:8px 0 0;font-size:16px}
+.rules p,.rules ul,.rules ol{margin:0;font-size:15px}
+.rules ul,.rules ol{padding-left:1.3em}
+.rules li+li{margin-top:4px}
+@keyframes rise{from{transform:translateY(16px);opacity:.4}to{transform:none;opacity:1}}
+
+/* トースト */
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);z-index:60;max-width:calc(100% - 32px);padding:10px 16px;border-radius:12px;background:var(--fg);color:var(--bg);font-size:14px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* コード表示 */
+.code-box{font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.4;min-height:84px;max-height:140px;word-break:break-all}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+
+.m0{margin:0}
+body.fill-app{height:100%;overflow:hidden;overscroll-behavior:none}
+.fill-app .wrap{padding-block:10px 12px}
+.steps{display:flex;flex-direction:column;gap:12px}
+.step-no{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--ai);color:var(--on-ai);font-weight:700;font-size:14px;flex:0 0 auto}
+.status{font-size:15px;font-weight:700}
+.status.ok{color:var(--good)}
+.status.ng{color:var(--bad)}
+.notice{background:var(--gold-soft);border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.6;margin:0}
+.notice.alert{background:var(--bad-soft);border:1px solid var(--bad)}
+.notice b{display:block;font-size:15px;margin-bottom:2px}
+.hold{display:grid;grid-template-columns:96px minmax(0,1fr);gap:14px;align-items:center}
+.hold svg{width:96px;height:auto;display:block}
+
+/* プレイ画面 */
+.play{gap:8px}
+.holder{display:flex;align-items:flex-end;gap:10px}
+.holder .who{flex:1;min-width:0;display:flex;flex-direction:column}
+.who-name{font-family:var(--f-display);font-size:30px;line-height:1.15;word-break:break-all;margin:0}
+.timer.low{background:var(--bad);color:#fff}
+.odai{align-self:flex-start;max-width:100%;padding:6px 12px;border-radius:10px;background:var(--gold);color:var(--on-gold);font-weight:700;font-size:15px;line-height:1.4}
+.mug-box{flex:1;min-height:0;position:relative;border-radius:18px;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;transition:box-shadow .15s}
+.mug-box.spill{box-shadow:inset 0 0 0 4px var(--bad)}
+#mug{display:block;position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+.finger-hint{position:absolute;left:8px;right:8px;bottom:6px;text-align:center;font-size:12px;color:var(--muted);pointer-events:none}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px 12px;display:flex;flex-direction:column;line-height:1.3}
+.stat span{font-size:12px;color:var(--muted);font-weight:700}
+.stat b{font-size:24px;font-variant-numeric:tabular-nums}
+.stat b small{font-size:14px;margin-left:2px}
+.stat.hot b{color:var(--bad)}
+.life-bar{height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden;margin-top:4px}
+.life-bar i{display:block;height:100%;background:var(--good);transition:width .15s}
+.stat.hot .life-bar i{background:var(--bad)}
+.out-card{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.out-card .big{font-family:var(--f-display);font-size:44px;color:var(--bad);line-height:1.1}
+.loser.win .ml{color:var(--good)}
+.landscape-warn{display:none}
+@media (orientation: landscape) and (max-height: 520px){
+  .fill-app .landscape-warn{display:flex;position:fixed;inset:0;z-index:40;background:var(--bg);align-items:center;justify-content:center;font-size:18px;font-weight:700;padding:24px;text-align:center;line-height:1.6}
+}
+
+/* 結果 */
+.loser{display:flex;flex-direction:column;align-items:center;gap:4px;padding:18px 12px;border-radius:var(--r);background:var(--surface);border:1px solid var(--line)}
+.loser .ml{font-family:var(--f-display);font-size:22px;color:var(--bad);text-align:center;white-space:pre-line;line-height:1.4}
+.batsu{margin:0;padding:10px 14px;border-radius:12px;background:var(--gold-soft);font-weight:700;text-align:center}
+.rank{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.rank li{display:grid;grid-template-columns:2em minmax(0,1fr) auto;gap:4px 10px;align-items:center}
+.rank .pos{font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right}
+.rank .nm{font-weight:700;word-break:break-all}
+.rank .val{font-variant-numeric:tabular-nums;font-weight:700}
+.rank .meter{grid-column:2 / span 2;height:8px;border-radius:4px;background:var(--surface-2);overflow:hidden}
+.rank .meter i{display:block;height:100%;background:var(--gold)}
+.rank li:first-child .meter i{background:var(--bad)}
+.nomiss{display:inline-block;margin-left:6px;padding:0 6px;border-radius:6px;background:var(--good-soft);color:var(--good);font-size:12px}
+</style>
+</head>
+<body>
+<header class="bar">
+  <a class="bar-back" href="index.html">トップ</a>
+  <h1 class="bar-title">こぼすなビール</h1>
+  <button class="bar-btn" id="helpBtn" type="button">ルール</button>
+</header>
+<div class="landscape-warn">画面が横向きになったよ。<br>コントロールセンターで「画面縦向きのロック」をオンにしてね</div>
+
+<main class="wrap">
+  <!-- 準備 -->
+  <section id="sSetup" class="screen">
+    <div class="stack">
+      <p class="eyebrow">1台のスマホを回すゲーム</p>
+      <h2 class="h2">なみなみのジョッキを、こぼさず隣へ</h2>
+      <p class="lead">スマホをジョッキみたいに縦に立てて持って、こぼさないように隣へ渡していく。左右に傾けたり揺らしたりすると画面のビールがこぼれる。1人ずつ「こぼせる量」が決まっていて、こぼした合計がそれを超えたらアウト。ジョッキはいつもなみなみのまま（こぼれた分はすぐ注ぎ足し）だから、誰が持っても同じむずかしさ。</p>
+    </div>
+    <div class="panel">
+      <p class="panel-title">メンバー（この順番で渡す）</p>
+      <div id="players" class="stack"></div>
+    </div>
+    <div class="panel">
+      <p class="panel-title">ルール設定</p>
+      <div class="field"><span class="label">むずかしさ（どこまで傾けるとこぼれるか）</span>
+        <div class="seg" id="optDiff"><button type="button" data-v="easy">やさしい</button><button type="button" data-v="normal">ふつう</button><button type="button" data-v="oni">鬼</button></div>
+        <p class="hint" id="diffHint"></p>
+      </div>
+      <div class="field"><span class="label">渡し方のお題</span>
+        <div class="seg" id="optOdai"><button type="button" data-v="on">あり</button><button type="button" data-v="off">なし（普通に渡す）</button></div>
+      </div>
+      <div class="field"><span class="label">1人のこぼせる量（ライフ）</span>
+        <div class="seg" id="optLife"><button type="button" data-v="50">50ml</button><button type="button" data-v="100">100ml</button><button type="button" data-v="150">150ml</button></div>
+        <p class="hint">ゲーム全体でこぼした合計がこれを超えたらアウト。周をまたいで減っていく。</p>
+      </div>
+      <div class="field"><span class="label">終わり方</span>
+        <div class="seg" id="optMode"><button type="button" data-v="sudden">1人アウトで終了</button><button type="button" data-v="survival">最後の1人まで</button></div>
+        <p class="hint" id="modeHint"></p>
+      </div>
+      <div class="field"><span class="label">1人の持ち時間</span>
+        <div class="seg" id="optTime"><button type="button" data-v="10">10秒</button><button type="button" data-v="15">15秒</button><button type="button" data-v="0">なし</button></div>
+        <p class="hint">時間をこえると、こぼせる量から 20ml へる</p>
+      </div>
+      <div class="row"><span class="label">効果音</span><span class="spacer"></span><button class="btn sm" id="soundBtn" type="button">音あり</button></div>
+    </div>
+    <button class="btn big primary" id="toReady" type="button">次へ（持ち方とセンサー）</button>
+  </section>
+
+  <!-- 持ち方とセンサー -->
+  <section id="sReady" class="screen" hidden>
+    <div class="stack">
+      <p class="eyebrow">はじめる前に</p>
+      <h2 class="h2">持ち方とセンサーの準備</h2>
+    </div>
+    <p class="notice alert" id="frameNotice" hidden><b>いまは傾きセンサーが使えない画面だよ</b>claude.ai の中で開いていると、iPhoneの傾きセンサーがブロックされる。本番は、ゲームのURLを Safari で直接開いてね。ここでは指でジョッキを傾ける「指モード」でお試しできるよ。</p>
+    <div class="steps">
+      <div class="panel">
+        <div class="row"><span class="step-no">1</span><span class="h3">ジョッキみたいに縦に持つ</span></div>
+        <div class="hold">
+          <svg viewBox="0 0 96 110" role="img" aria-label="スマホを縦に立てて、左右に傾けるとこぼれる">
+            <path d="M18 30 A40 40 0 0 1 32 14" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M78 30 A40 40 0 0 0 64 14" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round"/>
+            <path d="M28 18 L32 14 L35 20" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M68 18 L64 14 L61 20" fill="none" stroke="var(--muted)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <rect x="30" y="24" width="36" height="72" rx="7" fill="var(--surface)" stroke="var(--fg)" stroke-width="2.5"/>
+            <rect x="35" y="52" width="26" height="38" rx="3" fill="var(--gold)"/>
+            <rect x="35" y="46" width="26" height="8" rx="3" fill="var(--surface-2)" stroke="var(--line)"/>
+          </svg>
+          <p class="m0 small">画面を自分に向けて、スマホを縦に立てる。<b>左右に傾けるとこぼれる</b>。少し手前に倒して画面をのぞくのはOK。</p>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="row"><span class="step-no">2</span><span class="h3">画面の向きをロック</span></div>
+        <p class="m0 small">画面の右上から下にスワイプしてコントロールセンターを出して、「画面縦向きのロック」をオン（ホームボタンのある機種は画面の下から上にスワイプ）。オフのままだと、傾けた時に画面が横向きになっちゃう。</p>
+      </div>
+      <div class="panel">
+        <div class="row"><span class="step-no">3</span><span class="h3">センサーをオンにする</span></div>
+        <p class="m0 small">センサーを使っていいか聞かれたら「許可」を押してね。</p>
+        <button class="btn primary" id="senBtn" type="button">センサーをオンにする</button>
+        <p class="status m0" id="senStatus" role="status"></p>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" id="practiceBtn" type="button" disabled>ためしに持ってみる（練習）</button>
+      <button class="btn big gold" id="startBtn" type="button" disabled>スタート</button>
+      <button class="btn ghost" id="fingerBtn" type="button">センサーなしで遊ぶ（指モード）</button>
+    </div>
+  </section>
+
+  <!-- プレイ -->
+  <section id="sPlay" class="screen fill play" hidden>
+    <div class="holder">
+      <div class="who"><span class="eyebrow" id="pTurn">持ってる人</span><p class="who-name" id="pName">-</p></div>
+      <span class="pill timer num" id="pTimer" hidden>10</span>
+    </div>
+    <p class="odai m0" id="pOdai" hidden></p>
+    <div class="mug-box" id="mugBox">
+      <canvas id="mug" aria-label="横から見たビールジョッキ。スマホを傾けるとこぼれる"></canvas>
+      <span class="finger-hint" id="fingerHint" hidden>指モード：画面を左右にドラッグするとジョッキが傾くよ</span>
+    </div>
+    <div class="stats">
+      <div class="stat"><span id="pLapLabel">いま</span><b class="num" id="pLap">1周目</b></div>
+      <div class="stat" id="pLifeBox"><span id="pLifeLabel">こぼせる量 のこり</span><b class="num" id="pLife">100<small>ml</small></b><span class="life-bar" aria-hidden="true"><i id="pLifeBar" style="width:100%"></i></span></div>
+    </div>
+    <button class="btn big gold" id="passBtn" type="button">受け取った！</button>
+  </section>
+
+  <!-- 結果 -->
+  <section id="sResult" class="screen" hidden>
+    <div class="stack"><p class="eyebrow">結果</p><h2 class="h2" id="resTitle">いちばんこぼしたのは…</h2></div>
+    <div class="loser" id="loserBox"><p class="big-name" id="loserName">-</p><span class="ml num" id="loserMl"></span></div>
+    <p class="batsu" id="batsu"></p>
+    <div class="panel">
+      <p class="panel-title" id="rankTitle">こぼした量ランキング</p>
+      <ol class="rank" id="rankList"></ol>
+      <p class="hint" id="leftNote"></p>
+    </div>
+    <div class="actions">
+      <button class="btn big primary" id="againKeep" type="button">同じメンバーでもう1回</button>
+      <button class="btn wide ghost" id="backSetup" type="button">メンバー・設定を変える</button>
+    </div>
+  </section>
+</main>
+
+<script>
+/* 旅宴ゲーム 共通スクリプト（ネット不要で動く部品だけ） */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+function h(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue;
+    if (k === 'class') e.className = v;
+    else if (k === 'text') e.textContent = v;
+    else if (k === 'html') e.innerHTML = v;
+    else if (k.startsWith('on') && typeof v === 'function') e.addEventListener(k.slice(2), v);
+    else if (k === 'style') e.style.cssText = v;
+    else e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const kid of kids.flat(Infinity)) {
+    if (kid == null || kid === false) continue;
+    e.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+  }
+  return e;
+}
+
+/* 端末内の保存（使えない環境でも落ちない） */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+};
+
+/* 合言葉から毎回同じ乱数を作る */
+function hashStr(str) {
+  let h1 = 1779033703, h2 = 3144134277, h3 = 1013904242, h4 = 2773480762;
+  for (let i = 0, k; i < str.length; i++) {
+    k = str.charCodeAt(i);
+    h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
+    h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
+    h3 = h4 ^ Math.imul(h3 ^ k, 951274213);
+    h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
+  }
+  h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
+  h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+  return ((h1 ^ h2) >>> 0);
+}
+function rng(seed) {
+  let a = typeof seed === 'number' ? seed >>> 0 : hashStr(String(seed));
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function shuffle(arr, rand = Math.random) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function pick(arr, rand = Math.random) { return arr[Math.floor(rand() * arr.length)]; }
+function randomId(len = 6) {
+  const cs = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = '';
+  const buf = new Uint32Array(len);
+  (window.crypto || {}).getRandomValues ? crypto.getRandomValues(buf) : buf.forEach((_, i) => buf[i] = Math.random() * 1e9);
+  for (let i = 0; i < len; i++) s += cs[buf[i] % cs.length];
+  return s;
+}
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/* LINEで送れる「コード」にする（圧縮→base64url、最後に ~） */
+function b64u(bytes) {
+  let s = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function unb64u(str) {
+  str = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (str.length % 4) str += '=';
+  const bin = atob(str);
+  const b = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i);
+  return b;
+}
+async function pipeBytes(bytes, stream) {
+  const s = new Blob([bytes]).stream().pipeThrough(stream);
+  return new Uint8Array(await new Response(s).arrayBuffer());
+}
+async function encodeCode(prefix, obj) {
+  const raw = new TextEncoder().encode(JSON.stringify(obj));
+  if (typeof CompressionStream !== 'undefined') {
+    try {
+      const z = await pipeBytes(raw, new CompressionStream('deflate-raw'));
+      if (z.length < raw.length) return prefix + '.z' + b64u(z) + '~';
+    } catch (e) {}
+  }
+  return prefix + '.r' + b64u(raw) + '~';
+}
+/* 貼り付けた文章からコードを全部取り出す（LINEの名前や時刻が混ざってもOK） */
+async function decodeCodes(text, prefix) {
+  const flat = String(text || '').replace(/\s+/g, '');
+  const re = new RegExp(prefix.replace(/\./g, '\\.') + '\\.([zr])([A-Za-z0-9_-]+)~', 'g');
+  const out = [];
+  let m;
+  while ((m = re.exec(flat))) {
+    try {
+      let bytes = unb64u(m[2]);
+      if (m[1] === 'z') {
+        if (typeof DecompressionStream === 'undefined') throw new Error('old');
+        bytes = await pipeBytes(bytes, new DecompressionStream('deflate-raw'));
+      }
+      out.push(JSON.parse(new TextDecoder().decode(bytes)));
+    } catch (e) { out.push({ __error: e.message === 'old' ? 'old' : 'broken' }); }
+  }
+  return out;
+}
+
+/* 画面の切り替え */
+function show(id) {
+  $$('.screen').forEach(s => { s.hidden = s.id !== id; });
+  window.scrollTo(0, 0);
+}
+
+/* トースト・確認ダイアログ（ブラウザの confirm は使わない） */
+function toast(msg, ms = 2200) {
+  let t = $('#toast');
+  if (!t) { t = h('div', { id: 'toast', class: 'toast', role: 'status', 'aria-live': 'polite' }); document.body.append(t); }
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), ms);
+}
+function ask(msg, opt = {}) {
+  const { ok = 'OK', cancel = 'やめる', danger = false } = opt;
+  return new Promise(res => {
+    const prev = document.activeElement;
+    const close = v => { dlg.remove(); if (prev && prev.focus) prev.focus(); res(v); };
+    const okBtn = h('button', { class: 'btn ' + (danger ? 'danger' : 'primary'), onclick: () => close(true) }, ok);
+    const dlg = h('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', onclick: e => { if (e.target === dlg && cancel) close(false); } },
+      h('div', { class: 'modal-card' },
+        h('p', { class: 'modal-msg' }, msg),
+        h('div', { class: 'modal-actions' }, cancel ? h('button', { class: 'btn', onclick: () => close(false) }, cancel) : null, okBtn)));
+    document.body.append(dlg);
+    okBtn.focus();
+  });
+}
+function sheet(title, bodyNode) {
+  const dlg = h('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': title, onclick: e => { if (e.target === dlg) dlg.remove(); } },
+    h('div', { class: 'modal-card rules' },
+      h('h2', { class: 'h2' }, title),
+      bodyNode,
+      h('button', { class: 'btn primary wide', onclick: () => dlg.remove() }, 'とじる')));
+  document.body.append(dlg);
+  $('button', dlg).focus();
+}
+
+/* コピー・共有 */
+async function copyText(text, fallbackEl) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('コピーした！LINEに貼りつけて送ってね');
+    return true;
+  } catch (e) {
+    if (fallbackEl) { fallbackEl.focus(); fallbackEl.select(); try { fallbackEl.setSelectionRange(0, text.length); } catch (_) {} }
+    toast('自動でコピーできなかったから、文字を長押しして「コピー」してね', 3600);
+    return false;
+  }
+}
+async function shareText(text, fallbackEl) {
+  if (navigator.share) {
+    try { await navigator.share({ text }); return true; }
+    catch (e) { if (e && e.name === 'AbortError') return false; }
+  }
+  return copyText(text, fallbackEl);
+}
+
+/* 効果音（最初のタップ後に鳴る） */
+const Sound = (() => {
+  let ctx = null;
+  let on = store.get('tabi.sound', true);
+  function ac() {
+    if (!on) return null;
+    if (!ctx) { const C = window.AudioContext || window.webkitAudioContext; if (!C) return null; try { ctx = new C(); } catch (e) { return null; } }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+  function tone(freq, dur = 0.12, type = 'sine', vol = 0.2, when = 0) {
+    const c = ac(); if (!c) return;
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.value = freq;
+    const t = c.currentTime + when;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(c.destination);
+    o.start(t); o.stop(t + dur + 0.03);
+  }
+  function noise(dur = 0.3, vol = 0.2, freq = 1000, when = 0) {
+    const c = ac(); if (!c) return;
+    const len = Math.floor(c.sampleRate * dur);
+    const buf = c.createBuffer(1, len, c.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = c.createBufferSource(); src.buffer = buf;
+    const f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = 0.8;
+    const g = c.createGain(); g.gain.value = vol;
+    src.connect(f).connect(g).connect(c.destination);
+    src.start(c.currentTime + when);
+  }
+  return {
+    get on() { return on; },
+    set on(v) { on = !!v; store.set('tabi.sound', on); },
+    unlock() { ac(); },
+    tick() { tone(880, 0.05, 'square', 0.05); },
+    pop() { tone(660, 0.07, 'triangle', 0.12); },
+    ding() { tone(988, 0.14, 'sine', 0.2); tone(1319, 0.28, 'sine', 0.16, 0.11); },
+    buzz() { tone(150, 0.4, 'sawtooth', 0.12); },
+    splash() { noise(0.28, 0.22, 800); },
+    fanfare() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i === 3 ? 0.5 : 0.18, 'triangle', 0.18, i * 0.12)); },
+    drum(n = 18) { for (let i = 0; i < n; i++) noise(0.06, 0.08 + i * 0.008, 180 + i * 6, i * 0.07); }
+  };
+})();
+document.addEventListener('pointerdown', () => Sound.unlock(), { once: true });
+
+/* 画面が暗くならないようにする（使えない端末では何もしない） */
+const Wake = {
+  want: false, lock: null,
+  async on() { this.want = true; if (this.lock && !this.lock.released) return; try { if ('wakeLock' in navigator && document.visibilityState === 'visible') this.lock = await navigator.wakeLock.request('screen'); } catch (e) {} },
+  off() { this.want = false; try { this.lock && this.lock.release(); } catch (e) {} this.lock = null; }
+};
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Wake.want) Wake.on(); });
+
+/* タイマー */
+class Countdown {
+  constructor(sec, onTick, onEnd) { this.total = sec; this.onTick = onTick; this.onEnd = onEnd; this.t0 = 0; this.id = 0; this.lastWhole = null; }
+  start() {
+    this.t0 = performance.now();
+    this.stop();
+    const loop = () => {
+      const left = Math.max(0, this.total - (performance.now() - this.t0) / 1000);
+      const whole = Math.ceil(left);
+      if (whole !== this.lastWhole) { this.lastWhole = whole; this.onTick && this.onTick(whole, left); }
+      if (left <= 0) { this.id = 0; this.onEnd && this.onEnd(); return; }
+      this.id = requestAnimationFrame(loop);
+    };
+    this.id = requestAnimationFrame(loop);
+    return this;
+  }
+  stop() { if (this.id) cancelAnimationFrame(this.id); this.id = 0; }
+}
+
+/* セグメント（選択ボタン） */
+function bindSeg(el, value, onChange) {
+  const btns = $$('button', el);
+  const set = v => { btns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(v)))); };
+  set(value);
+  btns.forEach(b => b.addEventListener('click', () => { set(b.dataset.v); onChange(b.dataset.v); }));
+  return set;
+}
+
+/* 参加者の入力（全ゲームで名前を共有） */
+function PlayerEditor(root, opt = {}) {
+  const min = opt.min || 2, max = opt.max || 16;
+  let names = store.get('tabi.players', null);
+  let count = names ? clamp(names.length, min, max) : (opt.def || 10);
+  names = (names || []).slice(0, max);
+  const out = h('output', { class: 'num', 'aria-live': 'polite' }, count);
+  const grid = h('div', { class: 'names' });
+  function render() {
+    out.textContent = count;
+    grid.textContent = '';
+    for (let i = 0; i < count; i++) {
+      const inp = h('input', { id: (opt.idPrefix || 'p') + i, type: 'text', maxlength: '10', placeholder: (i + 1) + '番目の人', value: names[i] || '', autocomplete: 'off', enterkeyhint: 'next', 'aria-label': (i + 1) + '人目の名前' });
+      inp.addEventListener('input', () => { names[i] = inp.value.trim(); save(); });
+      grid.append(h('label', { class: 'name-in' }, h('span', {}, i + 1), inp));
+    }
+  }
+  function save() { store.set('tabi.players', names.slice(0, count)); }
+  const minus = h('button', { type: 'button', 'aria-label': '1人へらす', onclick: () => { if (count > min) { count--; render(); save(); } } }, '−');
+  const plus = h('button', { type: 'button', 'aria-label': '1人ふやす', onclick: () => { if (count < max) { count++; render(); save(); } } }, '+');
+  root.append(
+    h('div', { class: 'row' }, h('span', { class: 'label' }, '人数'), h('div', { class: 'stepper' }, minus, out, plus), h('span', { class: 'hint' }, '名前は空でもOK')),
+    grid);
+  render();
+  return {
+    get list() {
+      const seen = {};
+      return Array.from({ length: count }, (_, i) => {
+        let n = (names[i] || '').trim() || ((i + 1) + '番目の人');
+        if (seen[n]) { seen[n]++; n = n + seen[n]; } else seen[n] = 1;
+        return n;
+      });
+    }
+  };
+}
+
+/* ゲーム単体で開いた時用：オフライン対応（GitHub Pages などで有効、使えない環境では何もしない） */
+try {
+  if ('serviceWorker' in navigator && location.protocol === 'https:' && !/claude\.ai|claudeusercontent|anthropic/.test(location.hostname)) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+} catch (e) {}
+
+/* 音のON/OFFボタン */
+function bindSoundBtn(btn) {
+  if (!btn) return;
+  const paint = () => { btn.textContent = Sound.on ? '音あり' : '音なし'; btn.setAttribute('aria-pressed', String(Sound.on)); };
+  paint();
+  btn.addEventListener('click', () => { Sound.on = !Sound.on; paint(); if (Sound.on) Sound.pop(); });
+}
+
+</script>
+<script>
+'use strict';
+const CAP = 500;                 // ビールの量（ml）
+const HG = 1.35;                 // ジョッキの中の高さ（幅を1とした時）
+const SPILL_K = 5;               // あふれる勢い
+const GRACE = 0.8;               // 受け取った直後のこぼれない時間（秒）
+const TIME_PENALTY = 20;
+const MAX_TILT = 1.75;           // 約100度
+/* むずかしさ = どれだけなみなみに注ぐか。なみなみなほど少し傾けただけでこぼれる */
+const DIFF = {
+  easy:   { f0: 0.908, k: 36, c: 4.0, shake: 1.2 },   // 約14度でこぼれる
+  normal: { f0: 0.941, k: 44, c: 3.0, shake: 1.8 },   // 約9度
+  oni:    { f0: 0.968, k: 50, c: 2.4, shake: 2.4 }    // 約5度
+};
+const ODAI = ['左手だけで持って渡す','目をつぶって受け取る','頭の上を通して渡す','立ち上がってから渡す','ゆっくり5秒数えてから渡す','利き手じゃない方で受け取る','渡す前にジョッキを掲げて「かんぱーい」','ひじを伸ばしたまま渡す','受け取る人は正座で','背中側から渡す','渡す人と受け取る人で見つめ合う','受け取る人は親指と人さし指だけで持つ','片足立ちで渡す','小声で実況しながら渡す','受け取ったら一回しゃがんで立つ'];
+const BATSU = ['一発ギャグを1つ','変顔で写真を1枚撮られる','次のゲームの進行役','好きなタイプを発表','明日の朝いちばんにみんなを起こす係','全員の飲み物を聞いて回る係','モノマネを1つ','今年いちばん恥ずかしかった話をする','みんなの写真係（10分）','自分の長所を3つ、胸を張って言う'];
+
+const thresholdDeg = d => Math.round(Math.atan(2 * HG * (1 - DIFF[d].f0)) * 180 / Math.PI);
+const opts = Object.assign({ diff: 'normal', odai: 'on', time: '10', life: '100', mode: 'sudden' }, store.get('tabi.beer.opts', {}));
+const MODE_HINT = { sudden: '最初にアウトになった人が罰ゲーム。サクッと終わる。', survival: 'アウトの人は抜けていって、最後に残った人が優勝。そのぶん長め。' };
+const saveOpts = () => store.set('tabi.beer.opts', opts);
+const editor = PlayerEditor($('#players'), { def: 10, min: 2, max: 16 });
+const paintDiff = () => { $('#diffHint').textContent = '約' + thresholdDeg(opts.diff) + '度傾けるとこぼれはじめる。'; };
+bindSeg($('#optDiff'), opts.diff, v => { opts.diff = v; saveOpts(); paintDiff(); });
+bindSeg($('#optOdai'), opts.odai, v => { opts.odai = v; saveOpts(); });
+bindSeg($('#optTime'), opts.time, v => { opts.time = v; saveOpts(); });
+bindSeg($('#optLife'), opts.life, v => { opts.life = v; saveOpts(); });
+bindSeg($('#optMode'), opts.mode, v => { opts.mode = v; saveOpts(); $('#modeHint').textContent = MODE_HINT[v]; });
+$('#modeHint').textContent = MODE_HINT[opts.mode];
+bindSoundBtn($('#soundBtn'));
+paintDiff();
+
+/* ===== センサー（iPhoneの重力の向きを読む） ===== */
+const inFrame = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
+const S = { got: false, gx: 0, gy: 0, lx: 0, sign: 0 };
+const inp = { mode: 'none', fr: 0, touching: false, shake: 0 };
+let sensorAttached = false;
+function attachSensor() {
+  if (sensorAttached) return;
+  sensorAttached = true;
+  window.addEventListener('devicemotion', e => {
+    const g = e.accelerationIncludingGravity;
+    if (!g || g.x == null || g.y == null) return;
+    S.gx = g.x; S.gy = g.y; S.got = true;
+    // 縦に持った時の y の符号で、端末ごとの向きの決まりをそろえる
+    if (Math.abs(g.y) > 4.5 && Math.abs(g.y) > Math.abs(g.x)) S.sign = Math.sign(g.y);
+    const a = e.acceleration;
+    S.lx = a && a.x != null ? a.x : 0;
+  });
+}
+/* 時計回りに傾けた角度（ラジアン）。寝かせすぎている時は null */
+function phoneRoll() {
+  if (!S.sign) return null;
+  const x = -S.gx * S.sign, y = S.gy * S.sign;
+  if (Math.hypot(x, y) < 2.5) return null;
+  return Math.atan2(x, y);
+}
+function waitFor(fn, ms) {
+  return new Promise(res => { const t0 = performance.now(); (function chk() { if (fn()) return res(true); if (performance.now() - t0 > ms) return res(false); setTimeout(chk, 80); })(); });
+}
+async function enableSensor() {
+  const st = $('#senStatus');
+  st.className = 'status m0'; st.textContent = '確認中…';
+  let granted = true;
+  try {
+    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+      granted = (await DeviceMotionEvent.requestPermission()) === 'granted';
+    }
+  } catch (e) { granted = false; }
+  if (granted) { attachSensor(); granted = await waitFor(() => S.got, 1500); }
+  if (granted) {
+    inp.mode = 'sensor';
+    st.className = 'status ok m0';
+    st.textContent = S.sign ? 'センサーOK。傾けるとこぼれるよ' : 'センサーOK。スマホを縦に立てて持ってね';
+    Sound.ding();
+  } else {
+    st.className = 'status ng m0';
+    st.textContent = inFrame
+      ? 'claude.ai の中ではセンサーが使えない。Safariでゲームを開いてね'
+      : '許可されなかった。タブを閉じて開き直すと、もう一度聞かれるよ';
+    Sound.buzz();
+  }
+  paintReady();
+}
+function paintReady() {
+  $('#frameNotice').hidden = !inFrame;
+  const ok = inp.mode !== 'none';
+  const first = editor.list[0];
+  $('#startBtn').disabled = !ok;
+  $('#practiceBtn').disabled = !ok;
+  $('#startBtn').textContent = ok ? 'スタート（最初は' + first + '）' + (inp.mode === 'finger' ? '・指モード' : '') : 'スタート（先にセンサーをオンにしてね）';
+  $('#fingerBtn').hidden = inp.mode === 'sensor';
+  $('#fingerBtn').textContent = inp.mode === 'finger' ? '指モードになってるよ' : 'センサーなしで遊ぶ（指モード）';
+  $('#fingerBtn').disabled = inp.mode === 'finger';
+}
+$('#senBtn').addEventListener('click', enableSensor);
+$('#fingerBtn').addEventListener('click', () => { inp.mode = 'finger'; toast('指モードにしたよ'); paintReady(); });
+
+/* 指モード：左右にドラッグして傾ける */
+const box = $('#mugBox');
+let fStart = null, fLast = null;
+box.addEventListener('pointerdown', e => {
+  if (inp.mode !== 'finger') return;
+  e.preventDefault();
+  try { box.setPointerCapture(e.pointerId); } catch (_) {}
+  fStart = { x: e.clientX, id: e.pointerId };
+  fLast = { x: e.clientX, t: performance.now() };
+  inp.touching = true;
+});
+box.addEventListener('pointermove', e => {
+  if (!fStart || e.pointerId !== fStart.id) return;
+  inp.fr = clamp((e.clientX - fStart.x) / Math.max(120, box.clientWidth * 0.45) * 1.05, -MAX_TILT, MAX_TILT);
+  const now = performance.now(), dt = Math.max(1, now - fLast.t);
+  const speed = Math.abs(e.clientX - fLast.x) / dt;
+  if (speed > 1.6) inp.shake += Math.sign(e.clientX - fLast.x) * (speed - 1.6) * 0.6;
+  fLast = { x: e.clientX, t: now };
+});
+const fEnd = e => { if (fStart && e.pointerId === fStart.id) { fStart = null; inp.touching = false; inp.fr = 0; } };
+box.addEventListener('pointerup', fEnd);
+box.addEventListener('pointercancel', fEnd);
+box.addEventListener('touchstart', e => { if (inp.mode === 'finger') e.preventDefault(); }, { passive: false });
+
+/* ===== ゲーム状態 ===== */
+let B = null;
+const P = { a: 0, va: 0, r: 0 };   // a = ジョッキの中の液面の傾き、r = スマホの傾き
+let drops = [], bubbles = [], spilling = false, flat = false, lastSplash = 0, running = false, lastT = 0, clock = 0;
+
+function newGame() {
+  const names = editor.list;
+  B = { order: names, alive: names.slice(), outs: [], cur: 0, lap: 1, life: +opts.life, mode: opts.mode, vol: CAP, spilled: Object.fromEntries(names.map(n => [n, 0])), practice: false, turns: 0 };
+  play();
+}
+function practice() {
+  B = { order: ['練習中'], alive: ['練習中'], outs: [], cur: 0, lap: 1, life: Infinity, mode: 'sudden', vol: CAP, spilled: { '練習中': 0 }, practice: true, turns: 0 };
+  play();
+}
+function play() {
+  P.a = P.va = 0; drops = []; bubbles = [];
+  show('sPlay');
+  document.body.classList.add('fill-app');
+  Wake.on();
+  $('#fingerHint').hidden = inp.mode !== 'finger';
+  sizeMug();
+  beginTurn();
+  if (!running) { running = true; lastT = performance.now(); requestAnimationFrame(frame); }
+}
+const holder = () => B.order[B.cur];
+/* 次の生き残っている人（並び順で） */
+function nextIdx(from) {
+  const n = B.order.length;
+  for (let k = 1; k <= n; k++) { const j = (from + k) % n; if (B.alive.includes(B.order[j])) return j; }
+  return from;
+}
+const nextName = () => B.order[nextIdx(B.cur)];
+function beginTurn() {
+  B.vol = CAP; // 毎回なみなみに注ぎ足す（全員同じ条件）
+  P.a = P.va = 0;
+  B.turnSpill = 0; B.turnT = 0; B.penalized = false; B.grace = GRACE;
+  $('#pName').textContent = B.practice ? '練習中' : holder();
+  $('#pTurn').textContent = B.practice ? 'ゆっくり左右に傾けて、こぼれる角度をつかもう' : '持ってる人' + (B.mode === 'survival' ? '（のこり' + B.alive.length + '人）' : '');
+  const od = $('#pOdai');
+  if (B.practice || opts.odai !== 'on') od.hidden = true;
+  else { od.hidden = false; od.textContent = B.turns === 0 ? 'まずはまっすぐ持って、ゆっくり隣へ' : 'お題：' + pick(ODAI); }
+  $('#passBtn').textContent = B.practice ? '練習おわり' : '受け取った！（' + nextName() + 'が押す）';
+  $('#pTimer').hidden = B.practice || !+opts.time;
+  $('#pTimer').classList.remove('low');
+  updateStats();
+}
+$('#passBtn').addEventListener('click', () => {
+  if (B.practice) { stopPlay(); show('sReady'); return; }
+  if (B.turnT < 0.6 || B.paused) return; // 連打よけ
+  B.spilled[holder()] += B.turnSpill;
+  B.turnSpill = 0;
+  Sound.ding();
+  advance();
+});
+/* 次の人へ（一周したら周の数をふやす） */
+function advance() {
+  const ni = nextIdx(B.cur);
+  if (ni <= B.cur) B.lap++;
+  B.cur = ni;
+  B.turns++;
+  beginTurn();
+}
+/* こぼせる量を超えた */
+async function knockOut() {
+  const name = holder();
+  B.spilled[name] += B.turnSpill;
+  B.turnSpill = 0;
+  B.paused = true;
+  box.classList.remove('spill');
+  Sound.buzz();
+  B.outs.push(name);
+  B.alive = B.alive.filter(n => n !== name);
+  if (B.mode === 'sudden' || B.alive.length <= 1) { setTimeout(() => endGame(), 700); return; }
+  await ask(name + ' アウト！\n（こぼした合計 ' + Math.round(B.spilled[name]) + 'ml）\n\nのこり' + B.alive.length + '人。次は ' + B.order[nextIdx(B.cur)] + ' から。スマホを渡してね', { ok: 'つづける', cancel: null });
+  B.paused = false;
+  advance();
+}
+function stopPlay() { running = false; document.body.classList.remove('fill-app'); Wake.off(); }
+function updateStats() {
+  if (B.practice) {
+    $('#pLapLabel').textContent = 'いま'; $('#pLap').textContent = '練習中';
+    $('#pLifeLabel').textContent = 'この練習でこぼした量';
+    $('#pLife').firstChild.textContent = Math.round(B.turnSpill);
+    $('#pLifeBar').style.width = '0%';
+    $('#pLifeBox').classList.toggle('hot', B.turnSpill >= 1);
+    return;
+  }
+  $('#pLapLabel').textContent = 'いま'; $('#pLap').textContent = B.lap + '周目';
+  $('#pLifeLabel').textContent = holder() + 'のこぼせる量 のこり';
+  const left = Math.max(0, B.life - B.spilled[holder()] - B.turnSpill);
+  $('#pLife').firstChild.textContent = Math.round(left);
+  $('#pLifeBar').style.width = (left / B.life * 100).toFixed(1) + '%';
+  $('#pLifeBox').classList.toggle('hot', left / B.life < 0.3);
+}
+
+/* ===== 物理 ===== */
+function step(dt) {
+  const D = DIFF[opts.diff] || DIFF.normal;
+  let target = P.a;
+  if (inp.mode === 'sensor') {
+    const r = phoneRoll();
+    flat = r == null;
+    if (!flat) { P.r = r; target = r; }
+    // 横にグイッと動かすと、ビールは逆側に寄る（慣性）
+    if (Math.abs(S.lx) > 0.6) P.va -= S.lx * (S.sign || 1) * D.shake * 0.9 * dt;
+  } else if (inp.mode === 'finger') {
+    flat = false;
+    P.r = inp.fr + (inp.touching ? Math.sin(clock * 7.3) * 0.015 : 0);
+    target = P.r;
+  }
+  if (inp.shake) { P.va += clamp(inp.shake, -4, 4) * D.shake * 0.5; inp.shake = 0; }
+  target = clamp(target, -MAX_TILT, MAX_TILT);
+  P.va += (D.k * (target - P.a) - D.c * P.va) * dt;
+  P.a += P.va * dt;
+
+  if (B.paused) return;
+  B.turnT += dt;
+  if (B.grace > 0) B.grace -= dt;
+  const vcap = CAP / D.f0;
+  const f = B.vol / vcap;
+  const h = f * HG;
+  const tilt = Math.abs(P.a);
+  let e = h + 0.5 * Math.tan(Math.min(1.45, tilt)) - HG;
+  if (tilt > 1.45) e = Math.max(e, 0.5 + (tilt - 1.45));
+  B.thDeg = Math.atan(Math.max(0, 2 * (HG - h))) * 180 / Math.PI;
+  spilling = false;
+  if (e > 0 && B.grace <= 0 && B.vol > 0) {
+    const amt = Math.min(B.vol, SPILL_K * Math.pow(e, 1.5) * vcap * dt);
+    // ジョッキはいつもなみなみのまま（こぼれた分は自動で注ぎ足し）。こぼした量はライフから引く
+    B.turnSpill += amt;
+    spilling = amt > 0.02;
+    if (spilling) spawnDrops(amt, Math.sign(P.a) || 1);
+    if (spilling && clock - lastSplash > 0.32) { Sound.splash(); lastSplash = clock; }
+  }
+  box.classList.toggle('spill', spilling);
+
+  const lim = +opts.time;
+  if (!B.practice && lim) {
+    const left = Math.max(0, Math.ceil(lim - B.turnT));
+    const pill = $('#pTimer');
+    if (pill.textContent !== String(left)) { pill.textContent = left; if (left <= 3 && left > 0) Sound.tick(); }
+    pill.classList.toggle('low', left <= 3);
+    if (!B.penalized && B.turnT >= lim) { B.penalized = true; B.turnSpill += TIME_PENALTY; Sound.buzz(); toast('時間切れ！こぼせる量が' + TIME_PENALTY + 'mlへった'); }
+  }
+  updateStats();
+  if (!B.practice && B.spilled[holder()] + B.turnSpill >= B.life + 0.5) { knockOut(); return; } // 表示（四捨五入）でも超えた時にアウト
+
+  // こぼれたしずく：ふちから飛び出して、本当の「下」に向かって落ちる（座標は画面の向き、単位はジョッキの幅）
+  const dx = Math.sin(P.r), dy = Math.cos(P.r);
+  for (const p of drops) { p.vx += dx * 9 * dt; p.vy += dy * 9 * dt; p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt; }
+  drops = drops.filter(p => p.life > 0);
+  // 泡のつぶ：本当の「上」に向かって上がる（x は中心から、y は底からの高さ）
+  if (bubbles.length < 26 && Math.random() < 0.5) bubbles.push({ x: Math.random() * 0.9 - 0.45, y: 0.02 + Math.random() * 0.2, s: 0.25 + Math.random() * 0.35, r: 0.008 + Math.random() * 0.012 });
+  const tb = Math.tan(clamp(P.a, -1.4, 1.4));
+  for (const b of bubbles) { b.x += -Math.sin(P.r) * b.s * dt + Math.sin(clock * 3 + b.s * 20) * 0.001; b.y += Math.cos(P.r) * b.s * dt; }
+  bubbles = bubbles.filter(b => Math.abs(b.x) < 0.48 && b.y > 0 && b.y < h + b.x * tb - 0.03);
+}
+function spawnDrops(amt, side) {
+  const n = Math.min(6, Math.ceil(amt * 2));
+  for (let i = 0; i < n; i++) {
+    drops.push({ x: side * (0.5 + 0.05), y: -0.02, vx: side * (0.3 + Math.random() * 0.9), vy: -(Math.random() * 0.4), life: 0.8 + Math.random() * 0.5, r: 0.02 + Math.random() * 0.03 });
+  }
+}
+
+/* ===== 描画（横から見たジョッキ） ===== */
+const cv = $('#mug'), x = cv.getContext('2d');
+let W = 300, H = 400, dpr = 1, colors = {};
+function sizeMug() {
+  W = Math.max(200, box.clientWidth); H = Math.max(220, box.clientHeight);
+  dpr = Math.min(3, window.devicePixelRatio || 1);
+  cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+  const cs = getComputedStyle(document.documentElement);
+  const v = n => cs.getPropertyValue(n).trim();
+  colors = { line: v('--line') || '#c9cfe2', fg: v('--fg') || '#151c36', muted: v('--muted') || '#59627f', bad: v('--bad') || '#c3352b', good: v('--good') || '#17804f', surface2: v('--surface-2') || '#e3e7f2' };
+}
+if (window.ResizeObserver) new ResizeObserver(() => { if (!$('#sPlay').hidden) sizeMug(); }).observe(box);
+
+function frame(now) {
+  if (!running) return;
+  const dt = Math.min(0.033, (now - lastT) / 1000);
+  lastT = now; clock += dt;
+  step(dt);
+  if (running) render();
+  requestAnimationFrame(frame);
+}
+function rr(px, py, w, h, r) { x.beginPath(); x.roundRect ? x.roundRect(px, py, w, h, r) : x.rect(px, py, w, h); }
+function render() {
+  x.setTransform(dpr, 0, 0, dpr, 0, 0);
+  x.clearRect(0, 0, W, H);
+  const D = DIFF[opts.diff] || DIFF.normal;
+  // ジョッキの大きさと位置（幅 gw、高さ gw*HG）
+  const gaugeH = Math.min(78, H * 0.2);
+  const gw = Math.min(W * 0.46, (H - gaugeH - 40) / (HG + 0.18));
+  const gh = gw * HG;
+  const wall = gw * 0.07;
+  const cx = W / 2 - gw * 0.12;
+  const top0 = gaugeH + 18 + (H - gaugeH - 30 - gh - wall) / 2;
+  const left = cx - gw / 2, right = cx + gw / 2, bottom = top0 + gh;
+  const U = gw; // 1単位 = ジョッキの中の幅
+  const f = B.vol / (CAP / D.f0);
+  const h = f * HG;
+  const ta = Math.tan(clamp(P.a, -1.45, 1.45));
+  const yAt = px => bottom - h * U - (px - cx) * ta;
+
+  // 傾きメーター
+  drawGauge(W / 2, gaugeH - 4, Math.min(gaugeH - 14, W * 0.3));
+
+  // 取っ手
+  x.lineWidth = wall * 1.3; x.strokeStyle = 'rgba(205,214,232,.95)';
+  x.beginPath(); x.moveTo(right + wall, top0 + gh * 0.18);
+  x.bezierCurveTo(right + gw * 0.55, top0 + gh * 0.18, right + gw * 0.55, top0 + gh * 0.78, right + wall, top0 + gh * 0.78);
+  x.stroke();
+  x.lineWidth = wall * 0.5; x.strokeStyle = 'rgba(255,255,255,.7)'; x.stroke();
+
+  // ジョッキの中（ガラスの奥）
+  x.save();
+  rr(left, top0, gw, gh, [2, 2, gw * 0.08, gw * 0.08]); x.clip();
+  x.fillStyle = 'rgba(225,233,245,.55)'; x.fillRect(left, top0, gw, gh);
+  if (f > 0.001) {
+    // ビール
+    const g = x.createLinearGradient(0, yAt(cx), 0, bottom);
+    g.addColorStop(0, '#f6b52a'); g.addColorStop(0.55, '#e48d10'); g.addColorStop(1, '#bd6405');
+    x.fillStyle = g;
+    x.beginPath(); x.moveTo(left - 4, yAt(left - 4)); x.lineTo(right + 4, yAt(right + 4)); x.lineTo(right + 4, bottom + 10); x.lineTo(left - 4, bottom + 10); x.closePath(); x.fill();
+    // 泡のつぶ
+    x.fillStyle = 'rgba(255,248,225,.75)';
+    for (const b of bubbles) { x.beginPath(); x.arc(cx + b.x * U, bottom - b.y * U, Math.max(1, b.r * U), 0, Math.PI * 2); x.fill(); }
+    // 泡（液面の上に乗る）
+    const foam = U * (0.06 + 0.08 * Math.min(1, f));
+    const wob = Math.min(0.03, Math.abs(P.va) * 0.01);
+    x.beginPath();
+    x.moveTo(left - 4, yAt(left - 4) + 2);
+    for (let px = left - 4; px <= right + 4; px += 6) {
+      const k = (px - left) / gw;
+      const wave = Math.sin(k * 14 + clock * 4) * U * (0.008 + wob) + Math.sin(k * 31 + clock * 2.3) * U * 0.006;
+      x.lineTo(px, yAt(px) - foam - wave);
+    }
+    x.lineTo(right + 4, yAt(right + 4) + 2);
+    x.closePath();
+    x.fillStyle = '#fff6e2'; x.fill();
+    x.strokeStyle = 'rgba(214,170,90,.55)'; x.lineWidth = 1.5;
+    x.beginPath(); x.moveTo(left - 4, yAt(left - 4) + 1); x.lineTo(right + 4, yAt(right + 4) + 1); x.stroke();
+  }
+  x.restore();
+
+  // ガラス
+  x.lineWidth = wall; x.strokeStyle = 'rgba(205,214,232,.95)';
+  rr(left - wall / 2, top0 - wall / 2, gw + wall, gh + wall, [4, 4, gw * 0.1, gw * 0.1]); x.stroke();
+  x.fillStyle = 'rgba(205,214,232,.95)'; x.fillRect(left - wall / 2, bottom, gw + wall, wall * 1.6);
+  x.strokeStyle = 'rgba(255,255,255,.85)'; x.lineWidth = wall * 0.35;
+  x.beginPath(); x.moveTo(left + gw * 0.12, top0 + gh * 0.1); x.lineTo(left + gw * 0.12, top0 + gh * 0.85); x.stroke();
+  x.beginPath(); x.moveTo(left + gw * 0.22, top0 + gh * 0.12); x.lineTo(left + gw * 0.22, top0 + gh * 0.3); x.stroke();
+  // ふちの目印（ここを超えるとこぼれる）
+  x.strokeStyle = spilling ? colors.bad : 'rgba(255,255,255,.95)'; x.lineWidth = 3;
+  x.beginPath(); x.moveTo(left - wall / 2, top0 - wall / 2); x.lineTo(right + wall / 2, top0 - wall / 2); x.stroke();
+
+  // こぼれたしずく
+  for (const p of drops) {
+    x.fillStyle = 'rgba(232,150,20,' + Math.min(1, p.life * 1.5) + ')';
+    x.beginPath(); x.arc(cx + p.x * U, top0 + p.y * U, Math.max(2, p.r * U), 0, Math.PI * 2); x.fill();
+  }
+  // 寝かせすぎ
+  if (flat) {
+    x.fillStyle = 'rgba(13,20,48,.72)'; rr(W / 2 - 130, H / 2 - 30, 260, 60, 14); x.fill();
+    x.fillStyle = '#fff'; x.font = '700 17px "Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.fillText('スマホを縦に立ててね', W / 2, H / 2);
+  }
+}
+/* 上の半円メーター：針がスマホの傾き、赤い所に入るとこぼれる */
+function drawGauge(cx, cy, R) {
+  const MAXD = 60;
+  const th = Math.min(MAXD, B.thDeg || thresholdDeg(opts.diff));
+  const ang = d => -Math.PI / 2 + (clamp(d, -MAXD, MAXD) / MAXD) * (Math.PI / 2) * 0.95;
+  x.lineCap = 'butt';
+  x.lineWidth = Math.max(8, R * 0.16);
+  x.strokeStyle = colors.surface2;
+  x.beginPath(); x.arc(cx, cy, R, ang(-MAXD), ang(MAXD)); x.stroke();
+  x.strokeStyle = colors.bad;
+  x.beginPath(); x.arc(cx, cy, R, ang(-MAXD), ang(-th)); x.stroke();
+  x.beginPath(); x.arc(cx, cy, R, ang(th), ang(MAXD)); x.stroke();
+  const deg = P.a * 180 / Math.PI;
+  const a = ang(deg);
+  x.strokeStyle = colors.fg; x.lineWidth = 3; x.lineCap = 'round';
+  x.beginPath(); x.moveTo(cx, cy); x.lineTo(cx + Math.cos(a) * (R + 6), cy + Math.sin(a) * (R + 6)); x.stroke();
+  x.fillStyle = colors.fg; x.beginPath(); x.arc(cx, cy, 4, 0, Math.PI * 2); x.fill();
+  x.fillStyle = Math.abs(deg) >= th ? colors.bad : colors.muted;
+  x.font = '700 13px "Hiragino Maru Gothic ProN","Hiragino Sans",sans-serif'; x.textAlign = 'center'; x.textBaseline = 'alphabetic';
+  x.fillText('傾き ' + Math.round(Math.abs(deg)) + '° ／ ' + Math.round(th) + '°でこぼれる', cx, cy + 18);
+}
+
+/* ===== 結果 ===== */
+function endGame() {
+  stopPlay();
+  Sound.fanfare();
+  const life = B.life;
+  const firstOut = B.outs[0];
+  const box2 = $('#loserBox');
+  if (B.mode === 'survival') {
+    const winner = B.alive[0] || B.outs[B.outs.length - 1];
+    $('#resTitle').textContent = '最後まで生き残ったのは…';
+    box2.classList.add('win');
+    $('#loserName').textContent = winner;
+    $('#loserMl').textContent = '優勝！\n（こぼした合計 ' + Math.round(B.spilled[winner]) + 'ml）';
+    $('#batsu').textContent = '罰ゲームは最初にアウトの ' + firstOut + '：' + pick(BATSU);
+    $('#rankTitle').textContent = '順位（あとまで残った人ほど上）';
+  } else {
+    $('#resTitle').textContent = B.lap + '周目でアウト！';
+    box2.classList.remove('win');
+    $('#loserName').textContent = firstOut;
+    $('#loserMl').textContent = 'こぼした合計 ' + Math.round(B.spilled[firstOut]) + 'ml\n（こぼせる量 ' + life + 'ml）';
+    $('#batsu').textContent = '罰ゲーム案：' + pick(BATSU);
+    $('#rankTitle').textContent = 'みんながこぼした量';
+  }
+  // 並び：サバイバルは生き残り→あとでアウトの順、1人アウトはこぼした量の少ない順
+  const rows = B.order.map(n => ({ n, ml: Math.round(B.spilled[n] || 0), out: B.outs.indexOf(n) }));
+  if (B.mode === 'survival') rows.sort((a, b) => (b.out === -1 ? 99 : b.out) - (a.out === -1 ? 99 : a.out));
+  else rows.sort((a, b) => a.ml - b.ml);
+  const ol = $('#rankList'); ol.textContent = '';
+  rows.forEach((r, i) => ol.append(h('li', {},
+    h('span', { class: 'pos' }, i + 1),
+    h('span', { class: 'nm' }, r.n, r.ml === 0 ? h('span', { class: 'nomiss' }, 'ノーミス') : null, r.out >= 0 ? h('span', { class: 'nomiss', style: 'background:var(--bad-soft);color:var(--bad)' }, 'アウト') : null),
+    h('span', { class: 'val' }, r.ml + ' / ' + life + 'ml'),
+    h('span', { class: 'meter', 'aria-hidden': 'true' }, h('i', { style: 'width:' + Math.min(100, Math.round(r.ml / life * 100)) + '%' })))));
+  $('#leftNote').textContent = 'バーは「こぼせる量」をどれだけ使ったか。全員でこぼした合計：' + rows.reduce((a, r) => a + r.ml, 0) + 'ml';
+  show('sResult');
+}
+$('#againKeep').addEventListener('click', () => newGame());
+$('#backSetup').addEventListener('click', () => show('sSetup'));
+
+/* ===== 画面遷移 ===== */
+$('#toReady').addEventListener('click', () => { Sound.pop(); paintReady(); show('sReady'); });
+$('#startBtn').addEventListener('click', () => { Sound.pop(); newGame(); });
+$('#practiceBtn').addEventListener('click', practice);
+$('.bar-back').addEventListener('click', async e => {
+  if ($('#sPlay').hidden || (B && B.practice)) return;
+  e.preventDefault();
+  if (await ask('ゲームの途中だよ。トップにもどる？', { ok: 'もどる' })) location.href = 'index.html';
+});
+$('#helpBtn').addEventListener('click', () => sheet('こぼすなビールのルール', h('div', { class: 'stack', html: `
+<h3>あそびかた</h3>
+<ol>
+<li>スマホをジョッキみたいに縦に立てて持つ。画面のジョッキにはビールがなみなみ入ってる。</li>
+<li>次の人に、こぼさないようにスマホを渡す。受け取った人が「受け取った！」を押したら交代。渡している間にこぼれた分は、渡した人の記録になる。</li>
+<li>1人ずつ「こぼせる量」（ライフ）がある。こぼした合計がそれを超えたらアウト。周をまたいで減っていく。</li>
+<li>「1人アウトで終了」なら最初にアウトの人が罰ゲーム。「最後の1人まで」ならアウトの人が抜けていって、最後に残った人が優勝。</li>
+<li>ジョッキはいつもなみなみのまま（こぼれた分はすぐ注ぎ足し）。だから誰が持っても、何周目でも同じむずかしさ。</li>
+</ol>
+<h3>こぼれる仕組み</h3>
+<ul>
+<li>スマホを左右に傾けても、ビールの面は水平のまま。傾けすぎると縁からあふれる。</li>
+<li>上のメーターの針が赤い所に入るとこぼれる。「ふつう」は約9度、「鬼」は約5度でこぼれはじめる。</li>
+<li>急に揺らすと波が立ってこぼれる。受け取った直後の約0.8秒はこぼれない。</li>
+<li>持ち時間をこえると、こぼせる量が20ml減る。</li>
+</ul>
+<h3>準備</h3>
+<ul>
+<li>Safariでゲームを直接開く（claude.ai の中ではセンサーが使えない）。</li>
+<li>コントロールセンターで「画面縦向きのロック」をオンにする。</li>
+<li>スマホを落とさないように、座ったまま、テーブルの上でやろう。</li>
+</ul>` })));
+</script>
+</body>
+</html>
