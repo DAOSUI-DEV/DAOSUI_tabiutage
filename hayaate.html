@@ -7,9 +7,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1d2d5c">
 <title>早当てお絵かき</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<link rel="stylesheet" href="fonts/dela.css">
 <style>
 /* 旅宴ゲーム 共通スタイル
    旅館の夜：藍の浴衣 × 生ビールの金 × 木札。
@@ -41,7 +39,7 @@
   --paper:#ffffff;
   --shadow:0 1px 2px rgba(21,28,54,.08),0 8px 24px rgba(21,28,54,.08);
   --f-display:"Dela Gothic One","Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP","Noto Sans CJK JP",sans-serif;
-  --f-body:"Hiragino Maru Gothic ProN","Zen Maru Gothic","Hiragino Sans","Noto Sans JP","Noto Sans CJK JP",system-ui,sans-serif;
+  --f-body:"Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP","Noto Sans CJK JP",system-ui,sans-serif;
   --r:14px;
 }
 @media (prefers-color-scheme: dark){
@@ -257,6 +255,38 @@ button{cursor:pointer;touch-action:manipulation}
 .tapnames .btn.hit{background:var(--good);color:#fff;border-color:transparent}
 .board-text{min-height:46vh;font-size:clamp(40px,14vw,72px);font-weight:700;line-height:1.25;text-align:center;word-break:break-all;display:flex;align-items:center;justify-content:center;padding:16px;border-radius:var(--r);background:var(--surface);border:2px solid var(--line)}
 
+/* 暗号化・通信ログ */
+.lk{width:1em;height:1em;vertical-align:-.12em;flex:0 0 auto}
+.lockpill{display:inline-flex;align-items:center;gap:6px;margin-top:6px;padding:6px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:inherit;font:inherit;font-size:13px;font-weight:700}
+.lockbtn{flex:0 0 auto;width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--good);font-size:18px;display:flex;align-items:center;justify-content:center;padding:0}
+.secure{background:var(--good-soft);border-color:transparent}
+.logv{gap:12px}
+.logv .secbox{padding:12px 14px;border-radius:12px;background:var(--good-soft)}
+.logv .secbox .on{font-weight:700;color:var(--good);display:flex;align-items:center;gap:6px}
+.logv .kv{display:grid;grid-template-columns:minmax(0,1fr);gap:2px;margin:8px 0 0;font-size:13px}
+.logv .kv dt{font-weight:700;color:var(--muted);font-size:12px;margin-top:6px}
+.logv .kv dd{margin:0;word-break:break-all}
+.logv .seg button{flex:1 1 0;min-width:0;padding:6px;font-size:13px}
+.rules .loglist{padding-left:0}
+.rules .loglist li+li{margin-top:0}
+.logv .mono,.logv .wire{font-family:ui-monospace,Menlo,monospace;font-size:11px;word-break:break-all;line-height:1.45}
+.logv .verdict{margin:0;padding:10px 12px;border-radius:12px;font-weight:700;font-size:14px}
+.logv .verdict.ok{background:var(--surface-2)}
+.logv .verdict.warn{background:var(--bad-soft);color:var(--bad)}
+.logv .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.logv .stats div{padding:8px;border-radius:12px;background:var(--surface-2);text-align:center;font-size:12px}
+.logv .stats b{display:block;font-size:20px}
+.logv h3{margin:4px 0 0;font-size:15px}
+.loglist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.loglist li{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:8px;align-items:start;padding:8px 10px;border-radius:10px;background:var(--surface-2);font-size:13px}
+.loglist .tm{color:var(--muted);font-variant-numeric:tabular-nums}
+.loglist .dir{font-size:11px;font-weight:700;padding:1px 6px;border-radius:6px;background:var(--surface)}
+.loglist li.tx .dir{background:var(--ai);color:var(--on-ai)}
+.loglist li.ng{background:var(--bad-soft)}
+.loglist li.ng .dir{background:var(--bad);color:#fff}
+.loglist .k{font-weight:700}
+.loglist.people li{grid-template-columns:auto minmax(0,1fr)}
+
 /* 通信状態 */
 .netpill{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 60px);z-index:35;padding:6px 14px;border-radius:999px;background:var(--bad);color:#fff;font-size:13px;font-weight:700;box-shadow:var(--shadow)}
 </style>
@@ -296,7 +326,7 @@ button{cursor:pointer;touch-action:manipulation}
   <!-- 部屋を作る -->
   <section id="sCreate" class="screen" hidden>
     <div class="stack"><p class="eyebrow">幹事</p><h2 class="h2">部屋を作る</h2></div>
-    <div class="field"><label for="cName">あなたの名前</label><input id="cName" class="input" maxlength="10" autocomplete="off" placeholder="みんなが呼んでる呼び方"></div>
+    <div class="field"><label for="cName">あなたの名前</label><input id="cName" class="input" maxlength="10" autocomplete="off" placeholder="あだ名でOK（本名は入れなくていい）"></div>
     <button class="btn big gold" id="createBtn" type="button">部屋を作る</button>
     <p class="status" id="createStatus" role="status"></p>
     <button class="btn wide ghost" type="button" data-home>はじめの画面へ</button>
@@ -305,8 +335,15 @@ button{cursor:pointer;touch-action:manipulation}
   <!-- 部屋に入る -->
   <section id="sJoin" class="screen" hidden>
     <div class="stack"><p class="eyebrow">参加</p><h2 class="h2">部屋に入る</h2></div>
-    <div class="field"><label for="jCode">部屋の番号（5文字）</label><input id="jCode" class="input" maxlength="8" autocomplete="off" autocapitalize="characters" placeholder="例：K7PQH" style="letter-spacing:.2em;font-weight:700"></div>
-    <div class="field"><label for="jName">あなたの名前</label><input id="jName" class="input" maxlength="10" autocomplete="off" placeholder="みんなが呼んでる呼び方"></div>
+    <div class="panel secure" id="jRoomBox" hidden>
+      <p class="m0">部屋 <b class="num" id="jRoom">-----</b> に入るよ</p>
+      <p class="m0 small"><svg class="lk" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7.5" rx="1.6" fill="currentColor"/><path d="M5.2 7V5.2a2.8 2.8 0 0 1 5.6 0V7" fill="none" stroke="currentColor" stroke-width="1.7"/></svg> 鍵はリンクに入ってた。この部屋のやりとりは全部暗号化される。</p>
+    </div>
+    <div class="field" id="jLinkField"><label for="jLink">幹事から届いたリンク</label>
+      <textarea id="jLink" class="textarea" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="LINEのメッセージを長押し →「コピー」→ ここに貼り付け"></textarea>
+      <p class="hint">部屋の番号だけでは入れないよ（鍵がリンクの中にあるから）。いちばん簡単なのは、LINEで届いたリンクをタップすること。</p>
+    </div>
+    <div class="field"><label for="jName">あなたの名前</label><input id="jName" class="input" maxlength="10" autocomplete="off" placeholder="あだ名でOK（本名は入れなくていい）"></div>
     <button class="btn big primary" id="joinBtn" type="button">入る</button>
     <p class="status" id="joinStatus" role="status"></p>
     <button class="btn wide ghost" type="button" data-home>はじめの画面へ</button>
@@ -314,10 +351,12 @@ button{cursor:pointer;touch-action:manipulation}
 
   <!-- 待合室 -->
   <section id="sLobby" class="screen" hidden>
-    <div class="room"><small>部屋の番号</small><span class="room-code" id="lCode">-----</span></div>
+    <div class="room"><small>部屋の番号</small><span class="room-code" id="lCode">-----</span>
+      <button class="lockpill js-log" type="button"><svg class="lk" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7.5" rx="1.6" fill="currentColor"/><path d="M5.2 7V5.2a2.8 2.8 0 0 1 5.6 0V7" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>暗号化中 ・ 通信ログを見る</button></div>
     <div class="panel" id="lShare" hidden>
       <p class="panel-title">みんなを呼ぶ</p>
       <p class="m0 small">このリンクをLINEのグループに送ってね。タップすると、そのままこの部屋に入れる。</p>
+      <p class="m0 small"><b>リンクには部屋の鍵が入ってる。</b>グループの外には出さないでね。部屋の番号だけでは入れないよ。</p>
       <textarea class="textarea code-box" id="lLink" readonly aria-label="部屋のリンク"></textarea>
       <div class="row"><button class="btn primary" id="lShareBtn" type="button">LINEなどで送る</button><button class="btn" id="lCopyBtn" type="button">コピー</button></div>
     </div>
@@ -348,6 +387,7 @@ button{cursor:pointer;touch-action:manipulation}
   <section id="sDraw" class="screen" hidden>
     <div class="topline">
       <div class="grow"><span class="eyebrow" id="dEye">あなたが描く番。お題は</span><strong id="dTopic">-</strong></div>
+      <button class="lockbtn js-log" type="button" aria-label="通信ログ（暗号化中）"><svg class="lk" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7.5" rx="1.6" fill="currentColor"/><path d="M5.2 7V5.2a2.8 2.8 0 0 1 5.6 0V7" fill="none" stroke="currentColor" stroke-width="1.7"/></svg></button>
       <span class="pill timer num" id="dTimer">90</span>
     </div>
     <div class="queue" id="dQueue" hidden aria-live="polite">
@@ -379,6 +419,7 @@ button{cursor:pointer;touch-action:manipulation}
   <section id="sGuess" class="screen" hidden>
     <div class="topline">
       <div class="grow"><span class="eyebrow" id="gEye">いま描いてるのは</span><strong id="gDrawer">-</strong></div>
+      <button class="lockbtn js-log" type="button" aria-label="通信ログ（暗号化中）"><svg class="lk" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7.5" rx="1.6" fill="currentColor"/><path d="M5.2 7V5.2a2.8 2.8 0 0 1 5.6 0V7" fill="none" stroke="currentColor" stroke-width="1.7"/></svg></button>
       <span class="pill timer num" id="gTimer">90</span>
     </div>
     <canvas class="board" id="gBoard" width="1000" height="1000" aria-label="描いている絵"></canvas>
@@ -408,6 +449,7 @@ button{cursor:pointer;touch-action:manipulation}
     <div class="panel"><p class="panel-title">合計</p><ol class="ranks" id="rTotal"></ol></div>
     <button class="btn big gold" id="nextBtn" type="button" hidden>次の問題へ</button>
     <p class="notice" id="rWait" hidden>幹事が次へ進めるのを待ってね。</p>
+    <button class="btn wide ghost js-log" id="rLog" type="button"><svg class="lk" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7.5" rx="1.6" fill="currentColor"/><path d="M5.2 7V5.2a2.8 2.8 0 0 1 5.6 0V7" fill="none" stroke="currentColor" stroke-width="1.7"/></svg> 通信ログを見る</button>
   </section>
 
   <!-- 最終結果 -->
@@ -418,6 +460,9 @@ button{cursor:pointer;touch-action:manipulation}
     <button class="btn big primary" id="againBtn" type="button" hidden>もう1周（点数は引きつぐ）</button>
     <button class="btn wide" id="resetBtn" type="button" hidden>点数をリセットして最初から</button>
     <p class="notice" id="fWait" hidden>幹事が次をどうするか決めるのを待ってね。</p>
+    <button class="btn wide danger" id="closeBtn" type="button" hidden>部屋を閉じて終わる（サーバーの保存分も消す）</button>
+    <button class="btn wide" id="fLeave" type="button" hidden>部屋を出る</button>
+    <button class="btn wide ghost js-log" id="fLog" type="button"><svg class="lk" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7.5" rx="1.6" fill="currentColor"/><path d="M5.2 7V5.2a2.8 2.8 0 0 1 5.6 0V7" fill="none" stroke="currentColor" stroke-width="1.7"/></svg> 通信ログを見る</button>
     <button class="btn wide ghost" id="fHome" type="button" hidden>はじめの画面へ</button>
   </section>
 
@@ -819,9 +864,10 @@ const BROKERS = TEST_BROKER ? [{ id: 't', url: TEST_BROKER }] : [
   { id: 'c', url: 'wss://mqtt.eclipseprojects.io/mqtt' }
 ];
 const inFrame = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
-const me = Object.assign({ id: randomId(8), name: '' }, store.get('tabi.hayaate.me', {}));
-store.set('tabi.hayaate.me', me);
-const saveMe = () => store.set('tabi.hayaate.me', me);
+/* 自分のID は部屋ごとに新しく作る（別の日の部屋と同じ人だと結びつけられないように）。保存するのは名前だけ */
+const me = { id: randomId(8), name: String((store.get('tabi.hayaate.me', {}) || {}).name || '') };
+const saveMe = () => store.set('tabi.hayaate.me', { name: me.name });
+saveMe();
 const nameOf = id => (S && S.players.find(p => p.id === id) || {}).name || '？';
 const pickTopic = (genre, used) => {
   const pool = genre === 'all' || !TOPICS[genre] ? [].concat(...Object.values(TOPICS)) : TOPICS[genre];
@@ -898,29 +944,106 @@ function makeDrawable(board, tools, onBegin, onPoints, onEnd) {
   cv.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
 }
 
-/* ===== 通信 ===== */
-let client = null, ROOM = null, P = '', S = null, isHost = false, hostEnd = 0;
+/* ===== 通信（中身はすべて暗号化してから送る） =====
+  ・鍵（32バイトの乱数）は幹事のスマホで作り、部屋のリンクの「#」より後ろにだけ入れる。
+    「#」より後ろはブラウザがどこにも送らない部分なので、GitHubにも中継サーバーにも鍵は届かない。
+  ・中身は AES-GCM（256bit）で暗号化。鍵がちがうもの・書きかえられたものは開けない。
+  ・サーバー上の置き場所の名前も鍵から作る（部屋の番号やゲーム名はサーバーに出ない）。
+  ・同じメッセージの再送と、10分以上前のメッセージ（保存分を除く）は無視する。 */
+let client = null, ROOM = null, S = null, isHost = false, hostEnd = 0, BROKER = '', closing = false, goneTimer = 0;
 let curRid = null, localEnd = 0, lastSeq = 0;
-const topicBase = room => 'tabiutage/hayaate1/' + room;
 const net = (show) => { $('#netPill').hidden = !show; };
-function connectTo(url, timeoutMs = 6000) {
+const tenc = new TextEncoder(), tdec = new TextDecoder();
+const canZip = typeof CompressionStream !== 'undefined' && typeof DecompressionStream !== 'undefined';
+async function zipBytes(bytes, pack) {
+  const st = new Blob([bytes]).stream().pipeThrough(pack ? new CompressionStream('deflate-raw') : new DecompressionStream('deflate-raw'));
+  return new Uint8Array(await new Response(st).arrayBuffer());
+}
+/* サーバーに見える置き場所の名前は、意味のない1文字にする */
+const SUBS = { p: 'a', state: 'b', ink: 'c', canvas: 'd', guess: 'e', judge: 'f', ctl: 'g' };
+const SUBS_R = Object.fromEntries(Object.entries(SUBS).map(([k, v]) => [v, k]));
+const Sec = {
+  key: null, kb: '', root: '', seen: new Set(), seenQ: [], mine: new Set(), mineQ: [],
+  newKey() { return b64u(crypto.getRandomValues(new Uint8Array(32))); },
+  async use(kb) {
+    const raw = unb64u(kb);
+    if (raw.length !== 32) throw new Error('badkey');
+    this.key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
+    const tag = tenc.encode('tabiutage/room/'), all = new Uint8Array(tag.length + raw.length);
+    all.set(tag); all.set(raw, tag.length);
+    const hs = new Uint8Array(await crypto.subtle.digest('SHA-256', all));
+    this.root = 'z/' + Array.from(hs.slice(0, 12), b => b.toString(16).padStart(2, '0')).join('');
+    this.kb = kb;
+  },
+  remember(set, q, v) { set.add(v); q.push(v); if (q.length > 6000) set.delete(q.shift()); },
+  async seal(sub, obj) {
+    let body = tenc.encode(JSON.stringify({ t: Date.now(), d: obj })), ver = 1;
+    if (body.length > 1200 && canZip) { body = await zipBytes(body, true); ver = 2; }
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: tenc.encode('tu1|' + ver + '|' + sub) }, this.key, body));
+    const out = new Uint8Array(13 + ct.length);
+    out[0] = ver; out.set(iv, 1); out.set(ct, 13);
+    this.remember(this.mine, this.mineQ, b64u(iv));
+    return b64u(out);
+  },
+  async open(sub, wire) {
+    if (!/^[A-Za-z0-9_-]{40,}$/.test(wire)) throw new Error('format');
+    const b = unb64u(wire), ver = b[0];
+    if ((ver !== 1 && ver !== 2) || b.length < 29) throw new Error('format');
+    const iv = b.slice(1, 13);
+    let pt = new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv, additionalData: tenc.encode('tu1|' + ver + '|' + sub) }, this.key, b.slice(13)));
+    if (ver === 2) pt = await zipBytes(pt, false);
+    return { iv: b64u(iv), msg: JSON.parse(tdec.decode(pt)) };
+  },
+  reset() { this.key = null; this.kb = ''; this.root = ''; this.seen.clear(); this.seenQ = []; this.mine.clear(); this.mineQ = []; }
+};
+const wireTopic = sub => { const [k, ...rest] = sub.split('/'); return Sec.root + '/' + SUBS[k] + (rest.length ? '/' + rest.join('/') : ''); };
+const logicalSub = topic => {
+  if (!topic.startsWith(Sec.root + '/')) return null;
+  const t = topic.slice(Sec.root.length + 1).split('/'), k = SUBS_R[t[0]];
+  if (!k || (k === 'p') !== (t.length === 2) || t.length > 2) return null;
+  return [k, ...t.slice(1)].join('/');
+};
+/* サーバーに保存する分（状態・絵・参加者）は、幹事が閉じ忘れても12時間で自動で消えるようにする（MQTT 5 の有効期限）。
+   MQTT 5 が使えないサーバーの時だけ、古い方式（MQTT 3.1.1）でつなぐ */
+const KEEP_SEC = 12 * 3600;
+function tryConnect(url, ver, timeoutMs) {
   return new Promise((res, rej) => {
     if (typeof mqtt === 'undefined') return rej(new Error('nolib'));
     let done = false, c;
-    try { c = mqtt.connect(url, { clientId: 'tu' + me.id + randomId(4), clean: true, keepalive: 20, reconnectPeriod: 2000, connectTimeout: timeoutMs, protocolVersion: 4 }); }
+    const fail = why => { if (done) return; done = true; clearTimeout(t); try { c.end(true); } catch (e) {} rej(new Error(why)); };
+    // 接続IDも毎回ランダム（端末を見分けられる手がかりを残さない）
+    try { c = mqtt.connect(url, { clientId: 'c' + randomId(14), clean: true, keepalive: 20, reconnectPeriod: 2000, connectTimeout: timeoutMs, protocolVersion: ver }); }
     catch (e) { return rej(e); }
-    const t = setTimeout(() => { if (done) return; done = true; try { c.end(true); } catch (e) {} rej(new Error('timeout')); }, timeoutMs + 300);
+    const t = setTimeout(() => fail('timeout'), timeoutMs + 300);
     c.once('connect', () => { if (done) return; done = true; clearTimeout(t); res(c); });
-    c.on('error', () => {});
+    c.on('error', e => { if (e && (e.code === 1 || e.code === 132)) fail('proto'); });
+    c.once('close', () => fail('closed'));
   });
 }
-function pub(sub, obj, opt = {}) {
-  if (!client) return;
-  const body = obj == null ? '' : JSON.stringify(obj);
-  client.publish(P + '/' + sub, body, Object.assign({ qos: 0, retain: false }, opt));
+async function connectTo(url, timeoutMs = 6000) {
+  try { return await tryConnect(url, 5, timeoutMs); }
+  catch (e) { if (e.message === 'timeout' || e.message === 'nolib') throw e; return tryConnect(url, 4, timeoutMs); }
 }
+const isV5 = () => !!(client && client.options && client.options.protocolVersion === 5);
+/* 送る：順番が入れかわらないように1つずつ暗号化して送る */
+let txChain = Promise.resolve(), rxChain = Promise.resolve();
+const acks = new Set(), ownEmpty = {};
+function pub(sub, obj, opt = {}) {
+  if (!client || !Sec.key) return;
+  const c = client, topic = wireTopic(sub), o = Object.assign({ qos: 0, retain: false }, opt);
+  if (o.retain && obj != null && isV5()) o.properties = { messageExpiryInterval: KEEP_SEC };
+  txChain = txChain.then(async () => {
+    const body = obj == null ? '' : await Sec.seal(sub, obj);
+    if (!body) ownEmpty[topic] = (ownEmpty[topic] || 0) + 1;
+    const ack = new Promise(r => c.publish(topic, body, o, () => r()));
+    acks.add(ack); ack.then(() => acks.delete(ack));
+    Log.tx(sub, obj, body);
+  }).catch(e => console.warn(e));
+}
+async function flushTx(ms = 2500) { await txChain; await Promise.race([Promise.all([...acks]), new Promise(r => setTimeout(r, ms))]); }
 function setupClient() {
-  client.subscribe(P + '/#', { qos: 1 });
+  client.subscribe(Sec.root + '/#', { qos: 1 });
   client.on('message', onMsg);
   client.on('offline', () => net(true));
   client.on('close', () => { if (client && !client.connected) net(true); });
@@ -928,29 +1051,192 @@ function setupClient() {
   window.addEventListener('beforeunload', () => { try { client && client.end(true); } catch (e) {} });
 }
 function announce() { pub('p/' + me.id, { id: me.id, name: me.name }, { retain: true, qos: 1 }); }
-function onMsg(topic, buf) {
-  const k = topic.slice(P.length + 1);
-  const txt = buf ? buf.toString() : '';
-  if (k.startsWith('p/')) { if (isHost) hostPresence(k.slice(2), txt); return; }
-  let m = null;
-  if (txt) { try { m = JSON.parse(txt); } catch (e) { return; } }
-  if (k === 'state') {
-    if (m && m.v === 1 && Array.isArray(m.players)) onState(m);
-    else if (!txt && S && !isHost) { toast('幹事が部屋を閉じたよ', 3500); store.del('tabi.hayaate.session'); try { client.end(true); } catch (e) {} client = null; S = null; home(); }
-  }
-  else if (k === 'ink') onInk(m);
-  else if (k === 'canvas') onCanvas(m);
-  else if (k === 'guess') onGuess(m);
-  else if (k === 'judge') { onJudge(m); if (isHost) hostJudge(m); }
-  else if (k === 'ctl') { if (isHost) hostCtl(m); }
+/* 受け取る：届いた順に1つずつ開ける */
+function onMsg(topic, buf, packet) {
+  const raw = buf ? buf.toString() : '', retained = !!(packet && packet.retain);
+  rxChain = rxChain.then(() => handleMsg(topic, raw, retained)).catch(e => console.warn(e));
 }
+async function handleMsg(topic, raw, retained) {
+  if (!Sec.key) return;
+  const sub = logicalSub(topic);
+  if (!sub) { Log.reject('bad', '?', raw); return; }
+  if (!raw) {
+    // 中身なし＝サーバーの保存分を消す合図。自分が送ったもの以外は記録だけ
+    if (ownEmpty[topic] > 0) { ownEmpty[topic]--; return; }
+    Log.empty(sub);
+    if (sub === 'state' && S && !closing) {
+      if (isHost) publishState();
+      else { clearTimeout(goneTimer); goneTimer = setTimeout(() => { if (S && !isHost) roomClosed(); }, 8000); }
+    }
+    return;
+  }
+  let o;
+  try { o = await Sec.open(sub, raw); } catch (e) { Log.reject('bad', sub, raw); return; }
+  const own = Sec.mine.has(o.iv);
+  if (Sec.seen.has(o.iv)) { Log.reject('dup', sub, raw); return; }
+  Sec.remember(Sec.seen, Sec.seenQ, o.iv);
+  if (!retained && !own && Math.abs(Date.now() - (+o.msg.t || 0)) > 10 * 60 * 1000) { Log.reject('old', sub, raw); return; }
+  const m = o.msg.d;
+  if (!own) Log.rx(sub, m, raw);
+  dispatch(sub, m);
+}
+function dispatch(sub, m) {
+  if (!m || typeof m !== 'object') return;
+  if (sub.startsWith('p/')) { notePerson(sub.slice(2), m); if (isHost) hostPresence(sub.slice(2), m); return; }
+  if (sub === 'state') {
+    if (m.closed) { if (!isHost) roomClosed(); return; }
+    if (m.v === 1 && Array.isArray(m.players)) { clearTimeout(goneTimer); onState(m); }
+  }
+  else if (sub === 'ink') onInk(m);
+  else if (sub === 'canvas') onCanvas(m);
+  else if (sub === 'guess') onGuess(m);
+  else if (sub === 'judge') { onJudge(m); if (isHost) hostJudge(m); }
+  else if (sub === 'ctl') { if (isHost) hostCtl(m); }
+}
+/* 部屋を出る・閉じる。幹事が閉じる時は、サーバーに保存されている分（状態・絵・参加者）を全部消す */
+function forgetRoom() {
+  store.del('tabi.hayaate.session'); store.del('tabi.hayaate.hoststate');
+  try { client && client.end(true); } catch (e) {}
+  client = null; S = null; isHost = false; closing = false; clearTimeout(goneTimer); Sec.reset();
+}
+async function leaveRoom(dest) {
+  closing = true;
+  if (isHost && S) {
+    pub('state', { v: 1, closed: true }, { qos: 1 });
+    pub('state', null, { retain: true, qos: 1 });
+    pub('canvas', null, { retain: true, qos: 1 });
+    S.players.forEach(p => { if (p.id !== me.id) pub('p/' + p.id, null, { retain: true, qos: 1 }); });
+  } else pub('p/' + me.id, { id: me.id, name: me.name, leave: true }, { qos: 1 });
+  pub('p/' + me.id, null, { retain: true, qos: 1 });
+  await flushTx();
+  forgetRoom();
+  if (dest) location.href = dest;
+  else location.replace(location.pathname + location.search);   // ページごと読み直して、メモリの記録も消す
+}
+function roomClosed() { toast('幹事が部屋を閉じたよ。サーバーに残ってた分も消えた', 3500); forgetRoom(); home(); }
+
+/* ===== 通信ログ（このスマホのメモリの中だけ。どこにも送らないし、ページを閉じると消える） ===== */
+const KIND = { p: '参加', state: '進行', ink: '線', canvas: '絵の保存', guess: '答え', judge: '◯×', ctl: '操作', '?': '不明' };
+const hhmmss = t => new Date(t).toTimeString().slice(0, 8);
+const wirePreview = w => !w ? '（中身なし：サーバーの保存分を消す合図）' : w.length > 72 ? w.slice(0, 72) + '…（全部で' + w.length + '文字）' : w;
+const Log = {
+  list: [], people: [], st: { tx: 0, txB: 0, rx: 0, rxB: 0, bad: 0, dup: 0, old: 0, del: 0 }, view: null, mode: 'plain', timer: 0, warned: false,
+  push(e) {
+    const last = this.list[0];
+    if (last && e.k === 'ink' && last.k === 'ink' && last.dir === e.dir && last.who === e.who && e.at - last.at < 3000) { last.n++; last.at = e.at; last.wire = e.wire; }
+    else { e.n = 1; this.list.unshift(e); if (this.list.length > 400) this.list.pop(); }
+    this.refresh();
+  },
+  tx(sub, obj, wire) {
+    this.st.tx++; this.st.txB += wire.length;
+    this.push({ at: Date.now(), dir: 'tx', k: sub.split('/')[0], who: '自分', sum: summarize(sub, obj, true), wire: wirePreview(wire) });
+  },
+  rx(sub, m, wire) {
+    this.st.rx++; this.st.rxB += wire.length;
+    this.push({ at: Date.now(), dir: 'rx', k: sub.split('/')[0], who: whoOf(sub, m), sum: summarize(sub, m, false), wire: wirePreview(wire) });
+  },
+  empty(sub) { this.st.del++; this.push({ at: Date.now(), dir: 'rx', k: sub.split('/')[0], who: '', sum: 'サーバーの保存分を消す合図（中身なし）', wire: wirePreview('') }); },
+  reject(type, sub, wire) {
+    this.st[type]++;
+    const why = { bad: '開けなかった（鍵がちがう・書きかえられた・部屋の外から）', dup: '同じメッセージが2回届いた（2回目は無視）', old: '10分以上前のメッセージ（無視）' }[type];
+    this.push({ at: Date.now(), dir: 'ng', k: String(sub).split('/')[0], who: '', sum: why, wire: wirePreview(wire) });
+    if (type === 'bad' && !this.warned) { this.warned = true; toast('読めないメッセージが届いたから無視したよ。くわしくは通信ログで', 3500); }
+  },
+  person(text) { this.people.unshift({ at: Date.now(), text }); if (this.people.length > 100) this.people.pop(); this.refresh(); },
+  clear() { this.list = []; this.people = []; Object.keys(this.st).forEach(k => this.st[k] = 0); this.refresh(); },
+  refresh() {
+    if (!this.view || !this.view.isConnected) { this.view = null; return; }
+    if (!this.timer) this.timer = setTimeout(() => { this.timer = 0; renderLog(); }, 400);
+  }
+};
+function whoOf(sub, m) {
+  if (sub.startsWith('p/')) return m.name || '';
+  if (sub === 'state') return '幹事';
+  if (sub === 'ink' || sub === 'canvas' || sub === 'judge' || sub === 'ctl') return S ? nameOf(S.drawer) : '';
+  if (sub === 'guess') return m.n || '';
+  return '';
+}
+/* 記録に出す中身の説明。答えやお題は、見えちゃいけない人のログには出さない */
+function summarize(sub, m, mine) {
+  if (m == null) return 'サーバーの保存分を消した';
+  if (sub.startsWith('p/')) return m.leave ? '部屋を出る' : '名前「' + (m.name || '') + '」';
+  if (sub === 'state') {
+    if (m.closed) return '部屋を閉じた';
+    const st = Array.isArray(m.players) ? m : null;
+    if (!st) return '進行';
+    if (st.phase === 'lobby') return '待合室（' + st.players.length + '人）';
+    if (st.phase === 'draw') return qLabel(st) + '：描く人 ' + ((st.players.find(p => p.id === st.drawer) || {}).name || '？') + '（お題は描く人だけ）';
+    if (st.phase === 'reveal') return qLabel(st) + 'の結果';
+    return '最終結果';
+  }
+  if (sub === 'ink') return m.op === 'undo' ? '1本戻す' : m.op === 'clear' ? '全部消す' : '線を描いた';
+  if (sub === 'canvas') return '絵の保存（線 ' + ((m.s || []).length) + '本）';
+  if (sub === 'guess') return mine || (S && S.drawer === me.id) ? '答え「' + (m.t || '') + '」' : '答え（中身は描く人だけが見る）';
+  if (sub === 'judge') return (m.id === me.id || mine) ? (m.ok ? '◯（正解）' : '×（ちがう）') + (mine ? '：' + nameOf(m.id) + ' に' : '') : '判定（本人あて）';
+  if (sub === 'ctl') return 'この問題を終える';
+  return '';
+}
+const seenPeople = new Map();
+function notePerson(id, m) {
+  const name = String(m.name || '？').slice(0, 10);
+  if (m.leave) { if (seenPeople.has(id)) { Log.person(name + ' が部屋を出た'); seenPeople.delete(id); } return; }
+  if (!seenPeople.has(id)) Log.person(name + (id === me.id ? '（自分）' : '') + ' が入った');
+  else if (seenPeople.get(id) !== name) Log.person(seenPeople.get(id) + ' が名前を「' + name + '」に変えた');
+  seenPeople.set(id, name);
+}
+const LOCK_SVG = '<svg class="lk" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7.5" rx="1.6" fill="currentColor"/><path d="M5.2 7V5.2a2.8 2.8 0 0 1 5.6 0V7" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>';
+function openLog() {
+  if (!client || !Sec.key) { toast('部屋に入ると見られるよ'); return; }
+  const body = h('div', { class: 'stack logv' });
+  sheet('通信ログ', body);
+  Log.view = body; renderLog();
+}
+function renderLog() {
+  const v = Log.view; if (!v || !v.isConnected) { Log.view = null; return; }
+  const st = Log.st, kb = n => (n / 1024).toFixed(1) + 'KB';
+  const host = (BROKER.match(/^wss?:\/\/([^/:]+)/) || [])[1] || BROKER;
+  v.textContent = '';
+  const modeBtn = (val, label) => h('button', { type: 'button', 'aria-pressed': String(Log.mode === val), onclick: () => { Log.mode = val; renderLog(); } }, label);
+  const list = h('ul', { class: 'loglist' });
+  Log.list.slice(0, 120).forEach(e => list.append(h('li', { class: e.dir },
+    h('span', { class: 'tm' }, hhmmss(e.at)),
+    h('span', { class: 'dir' }, e.dir === 'tx' ? '送信' : e.dir === 'rx' ? '受信' : 'はじいた'),
+    h('div', {}, h('div', { class: 'k' }, (KIND[e.k] || '不明') + (e.n > 1 ? ' ×' + e.n : '') + (e.who ? '・' + e.who : '')),
+      Log.mode === 'wire' ? h('div', { class: 'wire' }, e.wire) : h('div', {}, e.sum)))));
+  const people = h('ul', { class: 'loglist people' });
+  Log.people.forEach(e => people.append(h('li', {}, h('span', { class: 'tm' }, hhmmss(e.at)), h('span', {}, e.text))));
+  v.append(
+    h('div', { class: 'secbox' },
+      h('p', { class: 'm0 on', html: LOCK_SVG + ' 暗号化：オン（AES-GCM 256bit）' }),
+      h('dl', { class: 'kv' },
+        h('dt', {}, '鍵の場所'), h('dd', {}, 'このスマホと、部屋のリンクの「#」より後ろだけ。サーバーにもGitHubにも送ってない'),
+        h('dt', {}, '中継サーバー'), h('dd', {}, host + '（無料の公開サーバー）'),
+        h('dt', {}, 'サーバーでの置き場所'), h('dd', { class: 'mono' }, Sec.root + '/…（鍵から作った、意味のない名前）'),
+        h('dt', {}, 'サーバーに見える物'), h('dd', {}, '意味のない文字の並び・大きさ・時刻・接続元のIPアドレス'))),
+    h('p', { class: 'verdict ' + (st.bad ? 'warn' : 'ok') }, st.bad
+      ? '⚠ 開けないメッセージを ' + st.bad + '件はじいた。部屋の外からの書き込みかも。鍵がないと中身は作れないから、ゲームには影響してないよ'
+      : '部屋の外からの書き込み：なし'),
+    h('div', { class: 'stats' },
+      h('div', {}, h('b', {}, st.tx), '送った（' + kb(st.txB) + '）'),
+      h('div', {}, h('b', {}, st.rx), '受け取った（' + kb(st.rxB) + '）'),
+      h('div', {}, h('b', {}, st.bad + st.dup + st.old), 'はじいた')),
+    h('p', { class: 'hint m0' }, 'はじいた内訳：開けない ' + st.bad + '・重複 ' + st.dup + '・古い ' + st.old + '　／　保存分を消す合図 ' + st.del),
+    h('h3', {}, '部屋の出入り'),
+    Log.people.length ? people : h('p', { class: 'empty m0' }, 'まだ記録がないよ'),
+    h('h3', {}, '通信の記録（新しい順）'),
+    h('div', { class: 'seg' }, modeBtn('plain', 'スマホの中の中身'), modeBtn('wire', 'サーバーから見える形')),
+    h('p', { class: 'hint m0' }, Log.mode === 'wire' ? 'サーバーや、のぞき見した人にはこう見える。鍵がないと意味のない文字の並び。' : '自分のスマホで鍵を使って開けた中身。お題とほかの人の答えは、ここにも出さないよ。'),
+    Log.list.length ? list : h('p', { class: 'empty m0' }, 'まだ記録がないよ'),
+    h('p', { class: 'hint m0' }, 'この記録はこのスマホのメモリの中だけにある。どこにも送らないし、部屋を出るかページを閉じると消える。'),
+    h('button', { class: 'btn sm ghost', type: 'button', onclick: () => Log.clear() }, '記録を消す'));
+}
+$$('.js-log').forEach(b => b.addEventListener('click', openLog));
 
 /* ===== 幹事のスマホ（ゲームの進行役） ===== */
 function publishState() { if (!S) return; store.set('tabi.hayaate.hoststate', { room: ROOM, S }); pub('state', S, { retain: true, qos: 1 }); render(); }
-function hostPresence(id, txt) {
-  if (!S || !/^[A-Za-z0-9]{4,16}$/.test(id)) return;
-  if (!txt) { if (S.phase === 'lobby' && id !== S.host) { S.players = S.players.filter(p => p.id !== id); publishState(); } return; }
-  let m; try { m = JSON.parse(txt); } catch (e) { return; }
+function hostPresence(id, m) {
+  if (!S || !/^[A-Za-z0-9]{4,16}$/.test(id) || m.id !== id) return;
+  if (m.leave) { if (S.phase === 'lobby' && id !== S.host) { S.players = S.players.filter(p => p.id !== id); publishState(); } return; }
   const name = String(m && m.name || '').trim().slice(0, 10) || '名無し';
   const ex = S.players.find(p => p.id === id);
   if (ex) { if (ex.name !== name) { ex.name = name; publishState(); } return; }
@@ -1034,7 +1320,7 @@ function render() {
 }
 
 /* 待合室 */
-const shareLink = () => location.href.split('#')[0].split('?')[0] + '?openExternalBrowser=1#' + ROOM;
+const shareLink = () => location.href.split('#')[0].split('?')[0] + '?openExternalBrowser=1#' + ROOM + '.' + Sec.kb;
 let segDur = null, segGenre = null, segPer = null;
 function renderLobby() {
   $('#lCode').textContent = ROOM;
@@ -1052,6 +1338,7 @@ function renderLobby() {
   $('#startBtn').disabled = S.players.length < 2;
   $('#startBtn').textContent = S.players.length < 2 ? 'あと1人以上集まったらスタートできる' : 'スタート（最初に描くのは ' + S.players[0].name + '）';
   $('#lWait').hidden = isHost;
+  $('#leaveBtn').textContent = isHost ? '部屋を閉じる（サーバーの保存分も消す）' : '部屋を出る';
   if (isHost) { segDur(String(S.settings.dur)); segGenre(S.settings.genre); segPer(String(S.settings.per || 1)); }
 }
 segDur = bindSeg($('#optDur'), '90', v => { if (isHost && S) { S.settings.dur = +v; publishState(); } });
@@ -1060,12 +1347,17 @@ segPer = bindSeg($('#optPer'), '1', v => { if (isHost && S) { S.settings.per = +
 $('#lShareBtn').addEventListener('click', () => shareText($('#lLink').value, $('#lLink')));
 $('#lCopyBtn').addEventListener('click', () => copyText($('#lLink').value, $('#lLink')));
 $('#startBtn').addEventListener('click', () => { Sound.pop(); hostStart(); });
-$('#leaveBtn').addEventListener('click', async () => {
-  if (!(await ask(isHost ? '部屋を閉じる？みんなも遊べなくなるよ' : '部屋を出る？', { ok: '出る', danger: true }))) return;
-  pub('p/' + me.id, null, { retain: true, qos: 1 });
-  if (isHost) { pub('state', null, { retain: true, qos: 1 }); pub('canvas', null, { retain: true, qos: 1 }); store.del('tabi.hayaate.hoststate'); }
-  store.del('tabi.hayaate.session');
-  setTimeout(() => location.href = location.href.split('#')[0], 300);
+async function askLeave() {
+  const msg = isHost ? '部屋を閉じる？みんなも遊べなくなるよ。サーバーに保存されている分も全部消すね' : '部屋を出る？';
+  if (await ask(msg, { ok: isHost ? '閉じる' : '出る', danger: true })) leaveRoom();
+}
+$('#leaveBtn').addEventListener('click', askLeave);
+/* 部屋に入ったまま「トップ」を押した時：幹事は部屋を閉じてから、参加者は出てからもどる */
+$('.bar-back').addEventListener('click', async e => {
+  if (!client || !S) return;
+  e.preventDefault();
+  const ok = await ask(isHost ? '部屋を閉じてトップにもどる？サーバーに保存されている分も消すよ' : '部屋を出てトップにもどる？', { ok: isHost ? '閉じてもどる' : '出てもどる', danger: isHost });
+  if (ok) leaveRoom('index.html');
 });
 
 /* 描く人 */
@@ -1231,6 +1523,7 @@ function renderReveal() {
   $('#nextBtn').hidden = !isHost;
   $('#nextBtn').textContent = last ? '最終結果へ' : '次の問題へ（次は ' + S.players[(S.round + 1) % S.players.length].name + ' が描く）';
   $('#rWait').hidden = isHost;
+  $('#rLog').hidden = !client;
 }
 function rankRows() {
   const rows = S.players.map(p => ({ id: p.id, n: p.name, s: S.scores[p.id] || 0 })).sort((a, b) => b.s - a.s);
@@ -1252,7 +1545,10 @@ function renderFinal() {
   renderScores($('#fRank'));
   $('#fBatsu').textContent = '罰ゲームは ' + bottom.join('、') + '：' + pick(BATSU);
   $('#againBtn').hidden = !isHost; $('#resetBtn').hidden = !isHost; $('#fWait').hidden = isHost; $('#fHome').hidden = true;
+  $('#closeBtn').hidden = !isHost || !client; $('#fLeave').hidden = isHost || !client; $('#fLog').hidden = !client;
 }
+$('#closeBtn').addEventListener('click', askLeave);
+$('#fLeave').addEventListener('click', askLeave);
 $('#againBtn').addEventListener('click', () => { if (!isHost) return; S.base = S.round; startRound(); });
 $('#resetBtn').addEventListener('click', async () => {
   if (!isHost || !(await ask('点数をリセットして、待合室にもどる？', { ok: 'リセット' }))) return;
@@ -1266,60 +1562,89 @@ async function createRoom() {
   me.name = name.slice(0, 10); saveMe();
   const st = $('#createStatus'); st.className = 'status'; st.textContent = 'つないでるよ…';
   $('#createBtn').disabled = true;
+  me.id = randomId(8);
+  try { await Sec.use(Sec.newKey()); } catch (e) { st.className = 'status ng'; st.textContent = 'このブラウザでは暗号化が使えない。Safariを最新にしてね'; $('#createBtn').disabled = false; return; }
   for (const b of BROKERS) {
-    try { client = await connectTo(b.url); ROOM = randomId(4) + b.id.toUpperCase(); break; } catch (e) { client = null; }
+    try { client = await connectTo(b.url); ROOM = randomId(4) + b.id.toUpperCase(); BROKER = b.url; break; } catch (e) { client = null; }
   }
   $('#createBtn').disabled = false;
   if (!client) { st.className = 'status ng'; st.textContent = 'つながらなかった。電波を確認してもう一度。ダメなら「ネットなしで遊ぶ」で遊べるよ'; return; }
-  P = topicBase(ROOM); isHost = true;
+  isHost = true;
   S = { v: 1, host: me.id, phase: 'lobby', players: [{ id: me.id, name: me.name }], settings: { dur: 90, genre: 'all', per: 1 }, round: 0, base: 0, scores: {}, used: [], correct: [] };
-  store.set('tabi.hayaate.session', { room: ROOM });
+  store.set('tabi.hayaate.session', { room: ROOM, key: Sec.kb, pid: me.id, at: Date.now() });
   setupClient(); announce(); publishState();
   Sound.fanfare();
 }
-async function joinRoom(code, name) {
-  code = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+/* 部屋のリンク：…#部屋の番号.鍵 */
+const parseRoomLink = text => {
+  const m = String(text || '').match(/(?:#|^|\s)([A-Za-z0-9]{5})\.([A-Za-z0-9_-]{43})(?![A-Za-z0-9_-])/);
+  return m ? { room: m[1].toUpperCase(), key: m[2] } : null;
+};
+let joinTarget = null;
+function openJoin(target) {
+  joinTarget = target;
+  $('#jRoomBox').hidden = !target; $('#jLinkField').hidden = !!target;
+  if (target) $('#jRoom').textContent = target.room;
+  $('#jLink').value = ''; $('#jName').value = me.name;
+  $('#joinStatus').className = 'status'; $('#joinStatus').textContent = '';
+  show('sJoin');
+}
+async function joinRoom(target, name, pid) {
   const st = $('#joinStatus');
-  if (code.length !== 5) { toast('部屋の番号は5文字だよ'); return false; }
-  const b = BROKERS.find(x => x.id.toUpperCase() === code[4]);
-  if (!b) { toast('部屋の番号がちがうみたい'); return false; }
+  const b = target && BROKERS.find(x => x.id.toUpperCase() === target.room[4]);
+  if (!b) { toast('リンクがちがうみたい。幹事にもう一度送ってもらってね'); return false; }
+  try { await Sec.use(target.key); } catch (e) { toast('リンクがこわれてるみたい。幹事にもう一度送ってもらってね'); return false; }
   me.name = (name || me.name).slice(0, 10); saveMe();
+  me.id = pid || randomId(8);
   st.className = 'status'; st.textContent = 'つないでるよ…';
   $('#joinBtn').disabled = true;
   try { client = await connectTo(b.url); } catch (e) { client = null; }
   $('#joinBtn').disabled = false;
   if (!client) { st.className = 'status ng'; st.textContent = 'つながらなかった。電波を確認してもう一度ためしてね'; return false; }
-  ROOM = code; P = topicBase(ROOM);
-  store.set('tabi.hayaate.session', { room: ROOM });
+  ROOM = target.room; BROKER = b.url;
+  store.set('tabi.hayaate.session', { room: ROOM, key: Sec.kb, pid: me.id, at: Date.now() });
   setupClient(); announce();
   st.textContent = '部屋をさがしてるよ…';
-  setTimeout(() => { if (!S) { st.className = 'status ng'; st.textContent = '部屋が見つからない。番号と、幹事のスマホの画面がついてるか確認してね'; } }, 5000);
+  setTimeout(async () => {
+    if (S || !client) return;
+    st.className = 'status ng'; st.textContent = '部屋が見つからない。幹事のスマホの画面がついてるか、リンクが最新か確認してね';
+    pub('p/' + me.id, null, { retain: true, qos: 1 });   // 見つからなかった部屋に自分の名前を残さない
+    await flushTx(); if (!S) forgetRoom();
+  }, 6000);
   return true;
 }
 $('#createBtn').addEventListener('click', createRoom);
 $('#joinBtn').addEventListener('click', () => {
+  const target = joinTarget || parseRoomLink($('#jLink').value);
+  if (!target) {
+    const v = $('#jLink').value.trim();
+    toast(/^[A-Za-z0-9]{5}$/.test(v) ? '部屋の番号だけでは入れないよ。幹事から届いたリンクを貼ってね' : '幹事から届いたリンクを貼ってね', 3500);
+    $('#jLink').focus(); return;
+  }
   const name = $('#jName').value.trim();
   if (!name) { toast('名前を入れてね'); $('#jName').focus(); return; }
-  joinRoom($('#jCode').value, name);
+  joinRoom(target, name);
 });
 $('#goCreate').addEventListener('click', () => { if (inFrame) { toast('claude.ai の中では使えない。Safariで開いてね', 3500); return; } $('#cName').value = me.name; show('sCreate'); });
-$('#goJoin').addEventListener('click', () => { if (inFrame) { toast('claude.ai の中では使えない。Safariで開いてね', 3500); return; } $('#jName').value = me.name; show('sJoin'); });
+$('#goJoin').addEventListener('click', () => { if (inFrame) { toast('claude.ai の中では使えない。Safariで開いてね', 3500); return; } openJoin(null); });
 $('#resumeBtn').addEventListener('click', () => {
-  const ses = store.get('tabi.hayaate.session', null); if (!ses) return;
+  const ses = store.get('tabi.hayaate.session', null); if (!ses || !ses.key) return;
   const hs = store.get('tabi.hayaate.hoststate', null);
-  if (hs && hs.room === ses.room && hs.S && hs.S.host === me.id) {
+  if (hs && hs.room === ses.room && hs.S && hs.S.host === ses.pid) {
     (async () => {
       const b = BROKERS.find(x => x.id.toUpperCase() === ses.room[4]);
-      try { client = await connectTo(b.url); } catch (e) { toast('つながらなかった'); return; }
-      ROOM = ses.room; P = topicBase(ROOM); isHost = true; S = hs.S;
+      try { await Sec.use(ses.key); client = await connectTo(b.url); } catch (e) { toast('つながらなかった'); return; }
+      me.id = ses.pid; ROOM = ses.room; BROKER = b.url; isHost = true; S = hs.S;
       hostEnd = Date.now() + (S.left || 0) * 1000; curRid = S.rid;
       setupClient(); announce(); publishState();
     })();
-  } else { $('#jCode').value = ses.room; $('#jName').value = me.name; show('sJoin'); if (me.name) joinRoom(ses.room, me.name); }
+  } else { const t = { room: ses.room, key: ses.key }; openJoin(t); if (me.name) joinRoom(t, me.name, ses.pid); }
 });
 $$('[data-home]').forEach(b => b.addEventListener('click', home));
 function home() {
-  const ses = store.get('tabi.hayaate.session', null);
+  let ses = store.get('tabi.hayaate.session', null);
+  // 鍵のない古い記録と、1日以上前の記録は消す
+  if (ses && (!ses.key || !ses.pid || Date.now() - (ses.at || 0) > 24 * 3600 * 1000)) { store.del('tabi.hayaate.session'); store.del('tabi.hayaate.hoststate'); ses = null; }
   $('#resumeBox').hidden = !ses;
   if (ses) $('#resumeText').textContent = '部屋 ' + ses.room + ' に入ってたよ（スマホを閉じた時など）';
   $('#frameNotice').hidden = !inFrame;
@@ -1408,7 +1733,7 @@ $('#helpBtn').addEventListener('click', () => sheet('早当てお絵かきのル
 <h3>準備</h3>
 <ol>
 <li>幹事が「部屋を作る」。出てきたリンクをLINEのグループに送る。</li>
-<li>みんなはリンクをタップして、名前を入れて「入る」。</li>
+<li>みんなはリンクをタップして、名前（あだ名でOK）を入れて「入る」。部屋の番号だけでは入れないよ。</li>
 <li>全員そろったら、幹事が「スタート」。</li>
 </ol>
 <h3>あそびかた</h3>
@@ -1425,6 +1750,15 @@ $('#helpBtn').addEventListener('click', () => sheet('早当てお絵かきのル
 <li>描いた人には点数が入らない。全員が同じ回数描くから、不公平にはならないよ。</li>
 <li>合計点が一番低い人が罰ゲーム。</li>
 </ul>
+<h3>安全のしくみ</h3>
+<ul>
+<li>名前・絵・答え・お題は、全部スマホの中で暗号化してから送る（AES-GCM 256bit）。</li>
+<li>鍵は部屋のリンクの中にだけある。リンクの「#」より後ろはブラウザがどこにも送らない部分だから、中継サーバーにもGitHubにも鍵は届かない。</li>
+<li>中継サーバーや、のぞき見した人に見えるのは意味のない文字の並びだけ。鍵がないと、書きこんでもはじかれる。</li>
+<li>リンクはLINEのグループの外に出さないでね。部屋の番号だけでは入れない。</li>
+<li>幹事が「部屋を閉じる」と、サーバーに残っている分も全部消える。部屋ごとに鍵とIDを作り直すから、前の部屋とは結びつかない。</li>
+<li>何を送って何を受け取ったかは、鍵のマークの「通信ログ」で見られる。記録はそのスマホの中だけ。</li>
+</ul>
 <h3>注意</h3>
 <ul>
 <li>通信が必要。宿のWi-Fiでつながらない時は、モバイルデータ（4G/5G）にすると直ることが多い。</li>
@@ -1433,16 +1767,16 @@ $('#helpBtn').addEventListener('click', () => sheet('早当てお絵かきのル
 </ul>` })));
 
 /* 起動：リンクに部屋の番号がついていたら、そのまま参加画面へ */
-(function boot() {
-  const code = (location.hash || '').replace('#', '').toUpperCase();
-  if (/^[A-Z0-9]{5}$/.test(code) && !inFrame) {
-    $('#jCode').value = code; $('#jName').value = me.name;
-    show('sJoin');
-    if (me.name) $('#jName').focus();
-    return;
-  }
-  home();
-})();
+function fromLink(first) {
+  const hash = location.hash || '';
+  if (hash.length > 1) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} }
+  const t = parseRoomLink(hash);
+  if (t && !inFrame && !client) { openJoin(t); if (me.name) $('#jName').focus(); return; }
+  if (first) home();
+  if (/^#[A-Za-z0-9]{5}$/.test(hash)) toast('古い形のリンクだよ。幹事に新しいリンクを送ってもらってね', 4000);
+}
+window.addEventListener('hashchange', () => fromLink(false));   // ページを開いたまま別のリンクをタップした時
+fromLink(true);
 </script>
 </body>
 </html>

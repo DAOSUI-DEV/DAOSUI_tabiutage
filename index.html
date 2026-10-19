@@ -8,9 +8,7 @@
 <meta name="theme-color" content="#1d2d5c">
 <title>旅宴ゲーム</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Maru+Gothic:wght@500;700&display=swap">
+<link rel="stylesheet" href="fonts/dela.css">
 <style>
 /* 旅宴ゲーム 共通スタイル
    旅館の夜：藍の浴衣 × 生ビールの金 × 木札。
@@ -42,7 +40,7 @@
   --paper:#ffffff;
   --shadow:0 1px 2px rgba(21,28,54,.08),0 8px 24px rgba(21,28,54,.08);
   --f-display:"Dela Gothic One","Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP","Noto Sans CJK JP",sans-serif;
-  --f-body:"Hiragino Maru Gothic ProN","Zen Maru Gothic","Hiragino Sans","Noto Sans JP","Noto Sans CJK JP",system-ui,sans-serif;
+  --f-body:"Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP","Noto Sans CJK JP",system-ui,sans-serif;
   --r:14px;
 }
 @media (prefers-color-scheme: dark){
@@ -291,6 +289,15 @@ button{cursor:pointer;touch-action:manipulation}
         <li>早当てお絵かきだけはネットが必要。宿のWi-Fiでつながらない時は、モバイルデータにすると直ることが多い。</li>
         <li>スマホを回すゲームは、テーブルや布団の上でやると落としても安心。</li>
       </ul>
+    </section>
+    <section class="stack" style="gap:10px" aria-labelledby="h-priv">
+      <h2 class="sec" id="h-priv">データとプライバシー</h2>
+      <ul class="tips">
+        <li>入れた名前やアンケートの答えは、このスマホの中だけに保存してる。サーバーには送らない。</li>
+        <li>Googleなどの外部サイトにはつながない。文字のデザインもこのサイトから読みこんでる。</li>
+        <li>早当てお絵かきだけは通信の中継サーバーを使う。中身は全部暗号化してから送るよ。</li>
+      </ul>
+      <button class="btn wide ghost" id="wipeBtn" type="button">このスマホに保存したデータを全部消す</button>
     </section>
     <p class="foot">旅宴ゲーム ・ 宴会用に作ったミニゲーム集</p>
   </div>
@@ -605,6 +612,14 @@ function bindSoundBtn(btn) {
   btn.addEventListener('click', () => { Sound.on = !Sound.on; paint(); if (Sound.on) Sound.pop(); });
 }
 
+</script>
+<script>
+document.getElementById('wipeBtn').addEventListener('click', async () => {
+  if (!(await ask('このスマホに保存した名前・アンケートの答え・ゲームの途中経過を全部消す？ゲーム自体はそのまま使えるよ', { ok: '全部消す', danger: true }))) return;
+  try { Object.keys(localStorage).filter(k => k.startsWith('tabi.')).forEach(k => localStorage.removeItem(k)); } catch (e) {}
+  try { sessionStorage.clear(); } catch (e) {}
+  toast('このスマホのデータを消したよ');
+});
 </script>
 </body>
 </html>
