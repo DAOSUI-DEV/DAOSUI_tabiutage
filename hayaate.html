@@ -170,6 +170,7 @@ button{cursor:pointer;touch-action:manipulation}
 .choice-big{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:16px 18px;min-height:72px}
 .choice-big small{font-weight:500;font-size:13px;opacity:.85}
 .status{font-size:14px;font-weight:700;margin:0}
+.qrow{gap:12px;flex-wrap:wrap}
 .status.ng{color:var(--bad)}
 .status.ok{color:var(--good)}
 .notice{background:var(--gold-soft);border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.6;margin:0}
@@ -370,9 +371,10 @@ button{cursor:pointer;touch-action:manipulation}
       <div class="field"><span class="label">描く時間</span>
         <div class="seg" id="optDur"><button type="button" data-v="60">60秒</button><button type="button" data-v="90">90秒</button><button type="button" data-v="120">120秒</button></div>
       </div>
-      <div class="field"><span class="label">1人が描く回数</span>
-        <div class="seg" id="optPer"><button type="button" data-v="1">1回</button><button type="button" data-v="2">2回</button><button type="button" data-v="3">3回</button></div>
-        <p class="hint m0">全員が同じ回数ずつ描く。5問に足りない時は自動で増やすよ。</p>
+      <div class="field"><span class="label">問題数</span>
+        <div class="row qrow"><div class="stepper" id="optQStep"><button type="button" data-d="-1" aria-label="1問へらす">−</button><output class="num" id="optQOut">10</output><button type="button" data-d="1" aria-label="1問ふやす">+</button></div><span class="hint">5〜50問。1問ずつ変えられる</span></div>
+        <div class="seg" id="optQSeg"><button type="button" data-v="5">5問</button><button type="button" data-v="10">10問</button><button type="button" data-v="15">15問</button><button type="button" data-v="20">20問</button><button type="button" data-v="30">30問</button></div>
+        <p class="hint m0" id="optQPlan"></p>
       </div>
       <div class="field"><span class="label">お題のジャンル</span>
         <div class="seg" id="optGenre"><button type="button" data-v="all">ぜんぶ</button><button type="button" data-v="basic">定番</button><button type="button" data-v="trip">旅・冬</button><button type="button" data-v="party">宴会</button><button type="button" data-v="hard">むずかしい</button></div>
@@ -475,9 +477,10 @@ button{cursor:pointer;touch-action:manipulation}
       <div class="field"><span class="label">描く時間</span>
         <div class="seg" id="offDur"><button type="button" data-v="60">60秒</button><button type="button" data-v="90">90秒</button><button type="button" data-v="120">120秒</button></div>
       </div>
-      <div class="field"><span class="label">1人が描く回数</span>
-        <div class="seg" id="offPer"><button type="button" data-v="1">1回</button><button type="button" data-v="2">2回</button><button type="button" data-v="3">3回</button></div>
-        <p class="hint m0" id="offPlan"></p>
+      <div class="field"><span class="label">問題数</span>
+        <div class="row qrow"><div class="stepper" id="offQStep"><button type="button" data-d="-1" aria-label="1問へらす">−</button><output class="num" id="offQOut">10</output><button type="button" data-d="1" aria-label="1問ふやす">+</button></div><span class="hint">5〜50問。1問ずつ変えられる</span></div>
+        <div class="seg" id="offQSeg"><button type="button" data-v="5">5問</button><button type="button" data-v="10">10問</button><button type="button" data-v="15">15問</button><button type="button" data-v="20">20問</button><button type="button" data-v="30">30問</button></div>
+        <p class="hint m0" id="offQPlan"></p>
       </div>
       <div class="field"><span class="label">お題のジャンル</span>
         <div class="seg" id="offGenre"><button type="button" data-v="all">ぜんぶ</button><button type="button" data-v="basic">定番</button><button type="button" data-v="trip">旅・冬</button><button type="button" data-v="party">宴会</button><button type="button" data-v="hard">むずかしい</button></div>
@@ -840,19 +843,42 @@ function bindSoundBtn(btn) {
 'use strict';
 /* ===== 設定 ===== */
 const TOPICS = {
-  basic: ['ねこ','パンダ','ペンギン','カブトムシ','恐竜','宇宙人','おばけ','忍者','ロボット','サンタクロース','雪だるま','観覧車','自転車','消防車','信号機','灯台','ピラミッド','富士山','ラーメン','たこ焼き','かき氷','歯ブラシ','掃除機','傘','花火','新幹線','ハンバーガー','ちょうちん','かっぱ','UFO'],
-  trip: ['露天風呂','浴衣','温泉卓球','温泉まんじゅう','旅館の朝ごはん','まくら投げ','足湯','湯けむり','お土産屋さん','駅弁','ロープウェイ','こたつ','みかん','鍋','雪見風呂','スキー','雪合戦','かまくら','つらら','寒ブリ','カニ','瓶の牛乳','マッサージチェア','鳥居','大仏','寝台列車','ご当地キャラ','高速バス','サービスエリア','ゆるキャラの着ぐるみ'],
-  party: ['乾杯','生ビール','枝豆','焼き鳥','唐揚げにレモン','締めのラーメン','カラオケ','終電','お通し','ジョッキ','割り勘','幹事','おしぼり','ハイボール','もつ鍋','だし巻き卵','ポテトフライ','王様ゲーム','二次会','忘年会','ビンゴ大会','くす玉','かんぱいの音頭','座敷','居酒屋の店員さん','ちょうちん横丁','宴会芸','ネクタイを頭に巻く人','お会計','送別会'],
-  hard: ['月曜日の朝','青春','給料日','筋肉痛','寝坊','ダイエット中','反抗期','既読スルー','初恋','期末テスト','年末年始','五月病','満員電車','二日酔い','夏休みの宿題','ドタキャン','サプライズ','やる気','緊張','ひとめぼれ','言い訳','節約','夜ふかし','金縛り','フラれた日','ど忘れ','ぼっち','有給休暇','締め切り','人生']
+  basic: ['ねこ','パンダ','ペンギン','カブトムシ','恐竜','宇宙人','おばけ','忍者','ロボット','サンタクロース','雪だるま','観覧車','自転車','消防車','信号機','灯台','ピラミッド','富士山','ラーメン','たこ焼き','かき氷','歯ブラシ','掃除機','傘','花火','新幹線','ハンバーガー','ちょうちん','かっぱ','UFO','キリン','ゾウ','ウサギ','カタツムリ','タコ','クジラ','ヘビ','フラミンゴ','カメ','ハリネズミ','ピアノ','ギター','メガネ','目覚まし時計','冷蔵庫','すべり台','ブランコ','気球','ヘリコプター','風車'],
+  trip: ['露天風呂','浴衣','温泉卓球','温泉まんじゅう','旅館の朝ごはん','まくら投げ','足湯','湯けむり','お土産屋さん','駅弁','ロープウェイ','こたつ','みかん','鍋','雪見風呂','スキー','雪合戦','かまくら','つらら','寒ブリ','カニ','瓶の牛乳','マッサージチェア','鳥居','大仏','寝台列車','ご当地キャラ','高速バス','サービスエリア','ゆるキャラの着ぐるみ','温泉たまご','ゲレンデ','リフト','雪の結晶','スノーボード','ホットココア','暖炉','たき火','流れ星','オーロラ','初日の出','鹿せんべい','金閣寺','五重塔','おみくじ','絵馬','観光バス','パスポート','スーツケース','記念スタンプ'],
+  party: ['乾杯','生ビール','枝豆','焼き鳥','唐揚げにレモン','締めのラーメン','カラオケ','終電','お通し','ジョッキ','割り勘','幹事','おしぼり','ハイボール','もつ鍋','だし巻き卵','ポテトフライ','王様ゲーム','二次会','忘年会','ビンゴ大会','くす玉','かんぱいの音頭','座敷','居酒屋の店員さん','ちょうちん横丁','宴会芸','ネクタイを頭に巻く人','お会計','送別会','日本酒','熱燗','おでん','餃子','ビールの泡','手拍子','タンバリン','マイク','ミラーボール','焼きそば','ピザ','回転寿司','ワイン','シャンパンタワー','クラッカー','誕生日ケーキ','記念写真','じゃんけん大会','ほろ酔い','千鳥足'],
+  hard: ['月曜日の朝','青春','給料日','筋肉痛','寝坊','ダイエット中','反抗期','既読スルー','初恋','期末テスト','年末年始','五月病','満員電車','二日酔い','夏休みの宿題','ドタキャン','サプライズ','やる気','緊張','ひとめぼれ','言い訳','節約','夜ふかし','金縛り','フラれた日','ど忘れ','ぼっち','有給休暇','締め切り','人生','時差ぼけ','ため息','満腹','うっかり','くしゃみ','しゃっくり','あくび','迷子','行列','渋滞','雨宿り','自撮り','充電切れ','圏外','二度寝','寝不足','お年玉','衝動買い','三日坊主','ないものねだり']
 };
 const COLORS = [['#1d1d1f','黒'],['#e0352b','赤'],['#2563d9','青'],['#24964a','緑'],['#f5c518','黄'],['#8b5a2b','茶'],['#f06ba8','ピンク']];
 const BATSU = ['一発ギャグを1つ','変顔で写真を1枚撮られる','次のゲームの進行役','好きなタイプを発表','明日の朝いちばんにみんなを起こす係','モノマネを1つ','今年いちばん恥ずかしかった話をする','みんなの写真係（10分）'];
 const PTS = k => [5, 4, 3][k] ?? 2;   // 当てた順の点数（描いた人は点数なし）
-const MIN_Q = 5;                      // 1ゲームのお題は最低5問
-/* 全員が同じ回数ずつ描く（描く人は点が入らないので、回数をそろえて不公平をなくす）。
-   人数が少なくて5問に届かない時は、1人の回数を増やす。例：2人→3回ずつ6問、3〜4人→2回ずつ */
-const perEach = (n, want) => Math.max(+want || 1, Math.ceil(MIN_Q / Math.max(1, n)));
-const totalQ = st => st.players.length * perEach(st.players.length, st.settings && st.settings.per);
+/* 問題数は幹事が5〜50問で決める（最初は10問）。描く人は集まった順に回していく */
+const Q_MIN = 5, Q_MAX = 50, Q_DEF = 10;
+const clampQ = v => Math.min(Q_MAX, Math.max(Q_MIN, Math.round(+v || Q_DEF)));
+const totalQ = st => clampQ(st.settings && st.settings.q);
+/* それぞれ何回描くか（割り切れない時は、順番が先の人が1回多い） */
+function planText(players, q) {
+  const n = players.length;
+  if (n < 2) return '2人以上集まったら、それぞれ何回描くかがここに出るよ。';
+  const cs = players.map((p, i) => ({ name: p.name, c: Math.floor(q / n) + (i < q % n ? 1 : 0) }));
+  const mx = Math.max(...cs.map(c => c.c)), mn = Math.min(...cs.map(c => c.c));
+  if (mx === mn) return '全部で ' + q + '問。全員 ' + mx + '回ずつ描くよ。';
+  const more = cs.filter(c => c.c === mx).map(c => c.name);
+  return '全部で ' + q + '問。' + more.join('・') + ' は ' + mx + '回、ほかの人は ' + mn + '回描くよ（描く回数が多い人は、そのぶん当てる回数が1回少なくなる）。' + (q % n ? 'ぴったり同じにするなら ' + (Math.floor(q / n) * n >= Q_MIN ? Math.floor(q / n) * n + '問か ' : '') + Math.ceil(q / n) * n + '問。' : '');
+}
+/* 問題数の入力（−／＋で1問ずつ、よく使う数はボタンで） */
+function bindQ(pre, value, onChange) {
+  let v = clampQ(value);
+  const out = $('#' + pre + 'Out');
+  const segSet = bindSeg($('#' + pre + 'Seg'), String(v), x => set(+x, true));
+  function set(x, fire) { v = clampQ(x); out.textContent = v + '問'; segSet(String(v)); if (fire) onChange(v); }
+  $$('#' + pre + 'Step button').forEach(b => b.addEventListener('click', () => {
+    const nv = clampQ(v + +b.dataset.d);
+    if (nv === v) { toast(+b.dataset.d < 0 ? '5問より少なくはできないよ' : '50問までだよ'); return; }
+    set(nv, true);
+  }));
+  set(v, false);
+  return x => set(x, false);
+}
 const qIndex = st => st.round - (st.base || 0);
 const qLabel = st => (qIndex(st) + 1) + '問目 / 全' + totalQ(st) + '問';
 const params = new URLSearchParams(location.search);
@@ -1321,14 +1347,14 @@ function render() {
 
 /* 待合室 */
 const shareLink = () => location.href.split('#')[0].split('?')[0] + '?openExternalBrowser=1#' + ROOM + '.' + Sec.kb;
-let segDur = null, segGenre = null, segPer = null;
+let segDur = null, segGenre = null, setQ = null;
 function renderLobby() {
   $('#lCode').textContent = ROOM;
   $('#lShare').hidden = !isHost;
   $('#lLink').value = '【早当てお絵かき】部屋の番号 ' + ROOM + '\n' + shareLink();
   $('#lCount').textContent = '集まった人（' + S.players.length + '人）';
-  const n = S.players.length, want = +(S.settings.per || 1), per = perEach(n, want);
-  $('#lPlan').textContent = n < 2 ? 'この順番で絵を描いていくよ。' : 'この順番で描いていくよ。全部で ' + (n * per) + '問（1人 ' + per + '回ずつ描く）' + (per > want ? '。5問に足りないから回数を増やしてるよ' : '');
+  $('#lPlan').textContent = 'この順番で描いていくよ。' + planText(S.players, totalQ(S));
+  $('#optQPlan').textContent = planText(S.players, totalQ(S));
   const ul = $('#lMembers'); ul.textContent = '';
   S.players.forEach(p => ul.append(h('li', { class: p.id === me.id ? 'me' : '' },
     p.id === S.host ? h('span', { class: 'tag-host' }, '幹事') : null, p.name,
@@ -1339,11 +1365,11 @@ function renderLobby() {
   $('#startBtn').textContent = S.players.length < 2 ? 'あと1人以上集まったらスタートできる' : 'スタート（最初に描くのは ' + S.players[0].name + '）';
   $('#lWait').hidden = isHost;
   $('#leaveBtn').textContent = isHost ? '部屋を閉じる（サーバーの保存分も消す）' : '部屋を出る';
-  if (isHost) { segDur(String(S.settings.dur)); segGenre(S.settings.genre); segPer(String(S.settings.per || 1)); }
+  if (isHost) { segDur(String(S.settings.dur)); segGenre(S.settings.genre); setQ(totalQ(S)); }
 }
 segDur = bindSeg($('#optDur'), '90', v => { if (isHost && S) { S.settings.dur = +v; publishState(); } });
 segGenre = bindSeg($('#optGenre'), 'all', v => { if (isHost && S) { S.settings.genre = v; publishState(); } });
-segPer = bindSeg($('#optPer'), '1', v => { if (isHost && S) { S.settings.per = +v; publishState(); } });
+setQ = bindQ('optQ', Q_DEF, v => { if (isHost && S) { S.settings.q = v; publishState(); } });
 $('#lShareBtn').addEventListener('click', () => shareText($('#lLink').value, $('#lLink')));
 $('#lCopyBtn').addEventListener('click', () => copyText($('#lLink').value, $('#lLink')));
 $('#startBtn').addEventListener('click', () => { Sound.pop(); hostStart(); });
@@ -1570,7 +1596,7 @@ async function createRoom() {
   $('#createBtn').disabled = false;
   if (!client) { st.className = 'status ng'; st.textContent = 'つながらなかった。電波を確認してもう一度。ダメなら「ネットなしで遊ぶ」で遊べるよ'; return; }
   isHost = true;
-  S = { v: 1, host: me.id, phase: 'lobby', players: [{ id: me.id, name: me.name }], settings: { dur: 90, genre: 'all', per: 1 }, round: 0, base: 0, scores: {}, used: [], correct: [] };
+  S = { v: 1, host: me.id, phase: 'lobby', players: [{ id: me.id, name: me.name }], settings: { dur: 90, genre: 'all', q: Q_DEF }, round: 0, base: 0, scores: {}, used: [], correct: [] };
   store.set('tabi.hayaate.session', { room: ROOM, key: Sec.kb, pid: me.id, at: Date.now() });
   setupClient(); announce(); publishState();
   Sound.fanfare();
@@ -1654,14 +1680,12 @@ function home() {
 /* ===== ネットなしモード ===== */
 let O = null;
 const offEditor = PlayerEditor($('#offPlayers'), { def: 10, min: 2, max: 16, idPrefix: 'op' });
-const offOpts = Object.assign({ dur: '90', genre: 'all', per: '1' }, store.get('tabi.hayaate.offopts', {}));
+const offOpts = Object.assign({ dur: '90', genre: 'all', q: Q_DEF }, store.get('tabi.hayaate.offopts', {}));
 bindSeg($('#offDur'), offOpts.dur, v => { offOpts.dur = v; store.set('tabi.hayaate.offopts', offOpts); });
 bindSeg($('#offGenre'), offOpts.genre, v => { offOpts.genre = v; store.set('tabi.hayaate.offopts', offOpts); });
-function offPlan() {
-  const n = offEditor.list.length, per = perEach(n, offOpts.per);
-  $('#offPlan').textContent = '全部で ' + (n * per) + '問（' + n + '人が ' + per + '回ずつ描く）' + (per > +offOpts.per ? '。5問に足りないから回数を増やしてるよ' : '');
-}
-bindSeg($('#offPer'), offOpts.per, v => { offOpts.per = v; store.set('tabi.hayaate.offopts', offOpts); offPlan(); });
+function offPlan() { $('#offQPlan').textContent = planText(offEditor.list.map(n => ({ name: n })), clampQ(offOpts.q)); }
+bindQ('offQ', offOpts.q, v => { offOpts.q = v; store.set('tabi.hayaate.offopts', offOpts); offPlan(); });
+$('#offPlayers').addEventListener('input', offPlan);
 $('#offPlayers').addEventListener('click', offPlan);
 offPlan();
 const oBoard = new Board($('#oBoard'));
@@ -1674,7 +1698,7 @@ let oTimer = null;
 $('#goOffline').addEventListener('click', () => show('sOffSetup'));
 $('#offStart').addEventListener('click', () => {
   const names = offEditor.list;
-  O = { players: names.map((n, i) => ({ id: 'o' + i, name: n })), round: 0, scores: {}, used: [], dur: +offOpts.dur, genre: offOpts.genre, per: +offOpts.per };
+  O = { players: names.map((n, i) => ({ id: 'o' + i, name: n })), round: 0, scores: {}, used: [], dur: +offOpts.dur, genre: offOpts.genre, q: clampQ(offOpts.q) };
   O.players.forEach(p => { O.scores[p.id] = 0; });
   offHand();
 });
@@ -1710,7 +1734,7 @@ function offEnd() {
   O.correct.forEach((id, k) => { gains[id] = PTS(k); });
   Object.keys(gains).forEach(id => { O.scores[id] += gains[id]; });
   // 結果画面は通信版と同じものを使う
-  S = { players: O.players, scores: O.scores, round: O.round, base: 0, settings: { per: O.per }, drawer: O.drawer, last: { topic: O.topic, drawer: O.drawer, correct: O.correct.slice(), gains }, phase: 'reveal' };
+  S = { players: O.players, scores: O.scores, round: O.round, base: 0, settings: { q: O.q }, drawer: O.drawer, last: { topic: O.topic, drawer: O.drawer, correct: O.correct.slice(), gains }, phase: 'reveal' };
   isHost = true;
   rBoard.load(oBoard.dump());
   show('sReveal'); renderRevealOffline();
@@ -1719,7 +1743,7 @@ function offEnd() {
 function renderRevealOffline() { renderReveal(); rBoard.load(oBoard.dump()); }
 function offNext() {
   O.round++;
-  if (O.round >= O.players.length * perEach(O.players.length, O.per)) { S.phase = 'final'; show('sFinal'); renderFinal(); $('#againBtn').hidden = true; $('#resetBtn').hidden = true; $('#fWait').hidden = true; $('#fHome').hidden = false; return; }
+  if (O.round >= O.q) { S.phase = 'final'; show('sFinal'); renderFinal(); $('#againBtn').hidden = true; $('#resetBtn').hidden = true; $('#fWait').hidden = true; $('#fHome').hidden = false; return; }
   offHand();
 }
 $('#fHome').addEventListener('click', () => { O = null; S = null; isHost = false; home(); });
@@ -1742,12 +1766,12 @@ $('#helpBtn').addEventListener('click', () => sheet('早当てお絵かきのル
 <li>当てる人は答えを入力して「送る」。何回でも送れる。</li>
 <li>描く人に答えが届くので、合ってたら◯、ちがったら×を押す。◯になった人はそこで抜ける。</li>
 <li>全員が当てるか、時間切れで1問終わり。描く人を順番に交代していく。</li>
-<li>全員が同じ回数ずつ描く。幹事が「1人が描く回数」（1〜3回）を決める。最低でも5問はやるので、人数が少ない時は自動で回数が増える（2人なら3回ずつで6問、3〜4人なら2回ずつ）。</li>
+<li>問題数は幹事が5〜50問で決める（最初は10問）。描く人は集まった順に回していく。割り切れない時は、順番が先の人が1回多く描く。</li>
 </ul>
 <h3>点数</h3>
 <ul>
 <li>当てた順に 1番 5点、2番 4点、3番 3点、4番から 2点。当てられなかったら 0点。</li>
-<li>描いた人には点数が入らない。全員が同じ回数描くから、不公平にはならないよ。</li>
+<li>描いた人には点数が入らない。描く回数が多い人は当てる回数が1回少なくなるから、気になる時は人数で割り切れる問題数にしてね（待合室に出る）。</li>
 <li>合計点が一番低い人が罰ゲーム。</li>
 </ul>
 <h3>安全のしくみ</h3>
