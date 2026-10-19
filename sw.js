@@ -1,5 +1,5 @@
 /* 旅宴ゲーム：一度ひらいたらネットがなくても動くようにする */
-const CACHE = 'tabiutage-v7';
+const CACHE = 'tabiutage-v8';
 const FILES = ['./', 'index.html', 'quiz.html', 'mission.html', 'oekaki.html', 'beer.html', 'hayaate.html', 'mqtt.min.js', 'fonts/dela.css'];
 
 self.addEventListener('install', e => {
