@@ -1,6 +1,6 @@
 /* 旅宴ゲーム：一度ひらいたらネットがなくても動くようにする */
-const CACHE = 'tabiutage-v9';
-const FILES = ['./', 'index.html', 'quiz.html', 'mission.html', 'oekaki.html', 'beer.html', 'hayaate.html', 'party.html', 'party/tug.js', 'party/darts.js', 'party/bomb.js', 'party/daruma.js', 'mqtt.min.js', 'fonts/dela.css'];
+const CACHE = 'tabiutage-v10';
+const FILES = ['./', 'index.html', 'quiz.html', 'mission.html', 'oekaki.html', 'beer.html', 'hayaate.html', 'party.html', 'party/tug.js', 'party/darts.js', 'party/bomb.js', 'party/daruma.js', 'party/hockey.js', 'party/kart.js', 'mqtt.min.js', 'fonts/dela.css'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
