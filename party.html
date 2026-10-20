@@ -1,0 +1,1491 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1d2d5c">
+<title>みんなで対戦</title>
+<link rel="stylesheet" href="fonts/dela.css">
+<style>
+/* 旅宴ゲーム 共通スタイル
+   旅館の夜：藍の浴衣 × 生ビールの金 × 木札。
+   レイアウト：上に細いヘッダー、中央にゲーム、下に親指で押せる大きな操作ボタン */
+:root{
+  --bg:#eef0f6;
+  --surface:#ffffff;
+  --surface-2:#e3e7f2;
+  --fg:#151c36;
+  --muted:#59627f;
+  --line:#c9cfe2;
+  --ai:#22356b;
+  --on-ai:#ffffff;
+  --gold:#e3a20d;
+  --gold-soft:#fbecc2;
+  --on-gold:#2b1d00;
+  --wood:#ead8b3;
+  --wood-edge:#c4a46c;
+  --on-wood:#2a2014;
+  --primary:#22356b;
+  --on-primary:#ffffff;
+  --good:#17804f;
+  --good-soft:#d9f2e5;
+  --bad:#c3352b;
+  --bad-soft:#fbe1de;
+  --head-bg:#1d2d5c;
+  --head-fg:#f3f5fb;
+  --scrim:rgba(13,20,48,.55);
+  --paper:#ffffff;
+  --shadow:0 1px 2px rgba(21,28,54,.08),0 8px 24px rgba(21,28,54,.08);
+  --f-display:"Dela Gothic One","Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP","Noto Sans CJK JP",sans-serif;
+  --f-body:"Hiragino Maru Gothic ProN","Hiragino Sans","Noto Sans JP","Noto Sans CJK JP",system-ui,sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1430;--surface:#162047;--surface-2:#1f2b5a;--fg:#eef1fb;--muted:#a2abc9;--line:#2e3c74;
+    --ai:#9db1f0;--on-ai:#0b1230;--gold:#f4bb2a;--gold-soft:#3b300f;--on-gold:#1f1500;
+    --wood:#3d3323;--wood-edge:#6a5534;--on-wood:#f4e7cc;--primary:#9db1f0;--on-primary:#0b1230;
+    --good:#43c98e;--good-soft:#123a2a;--bad:#ff7466;--bad-soft:#47201d;--head-bg:#0a1026;--head-fg:#eef1fb;
+    --scrim:rgba(0,0,0,.6);--paper:#ffffff;--shadow:none;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d1430;--surface:#162047;--surface-2:#1f2b5a;--fg:#eef1fb;--muted:#a2abc9;--line:#2e3c74;
+  --ai:#9db1f0;--on-ai:#0b1230;--gold:#f4bb2a;--gold-soft:#3b300f;--on-gold:#1f1500;
+  --wood:#3d3323;--wood-edge:#6a5534;--on-wood:#f4e7cc;--primary:#9db1f0;--on-primary:#0b1230;
+  --good:#43c98e;--good-soft:#123a2a;--bad:#ff7466;--bad-soft:#47201d;--head-bg:#0a1026;--head-fg:#eef1fb;
+  --scrim:rgba(0,0,0,.6);--paper:#ffffff;--shadow:none;color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{height:100%;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);-webkit-text-size-adjust:100%}
+body{margin:0;min-height:100%;background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.6;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--head-bg)}
+[hidden]{display:none!important}
+img{max-width:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+
+/* ヘッダー */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;display:flex;align-items:center;gap:8px;min-height:52px;background:var(--head-bg);color:var(--head-fg);padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));border-bottom:3px solid var(--gold)}
+.bar-title{flex:1;margin:0;font-family:var(--f-display);font-weight:400;font-size:19px;letter-spacing:.04em;line-height:1.2;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-back,.bar-btn{flex:0 0 auto;min-width:64px;min-height:36px;display:inline-flex;align-items:center;justify-content:center;padding:4px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.28);background:transparent;color:var(--head-fg);font-size:13px;text-decoration:none}
+.bar-back::before{content:"";width:8px;height:8px;border-left:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);margin-right:6px}
+
+/* 本体 */
+.wrap{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 40px}
+.screen{display:flex;flex-direction:column;gap:16px}
+.fill-app{height:100%;display:flex;flex-direction:column}
+.fill-app .wrap{flex:1;min-height:0;width:100%;display:flex;flex-direction:column}
+.fill-app .screen.fill{flex:1;min-height:0}
+
+.eyebrow{margin:0;font-size:12px;letter-spacing:.14em;color:var(--muted);font-weight:700}
+.h2{margin:0;font-family:var(--f-display);font-weight:400;font-size:24px;line-height:1.3;text-wrap:balance}
+.h3{margin:0;font-size:17px;font-weight:700;line-height:1.4}
+.lead{margin:0;color:var(--muted);font-size:15px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+.center{text-align:center}
+.num{font-variant-numeric:tabular-nums}
+.stack{display:flex;flex-direction:column;gap:10px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.row > *{min-width:0}
+.spacer{flex:1}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:flex;flex-direction:column;gap:12px}
+.panel-title{margin:0;font-size:14px;font-weight:700;color:var(--muted);letter-spacing:.06em}
+
+/* ボタン */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:10px 18px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font-weight:700;font-size:16px;line-height:1.3;text-align:center;text-decoration:none;user-select:none;-webkit-user-select:none;transition:transform .08s ease,filter .15s ease}
+.btn:active{transform:scale(.98)}
+.btn:disabled{opacity:.45;pointer-events:none}
+.btn.primary{background:var(--primary);color:var(--on-primary);border-color:transparent}
+.btn.gold{background:var(--gold);color:var(--on-gold);border-color:transparent}
+.btn.danger{background:var(--bad);color:#fff;border-color:transparent}
+.btn.ghost{background:transparent}
+.btn.big{width:100%;min-height:60px;font-size:18px;border-radius:16px}
+.btn.wide{width:100%}
+.btn.sm{min-height:36px;padding:6px 12px;font-size:14px;border-radius:10px}
+.actions{display:flex;flex-direction:column;gap:10px}
+
+/* 入力 */
+.field{display:flex;flex-direction:column;gap:6px}
+.field > label,.label{font-size:14px;font-weight:700}
+.input,.textarea{width:100%;min-height:48px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:17px;line-height:1.5}
+.textarea{min-height:110px;resize:vertical;font-size:15px;word-break:break-all}
+.input:focus,.textarea:focus{border-color:var(--ai);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--ai) 25%,transparent)}
+.hint{margin:0;font-size:13px;color:var(--muted)}
+
+/* セグメント */
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{flex:1 1 auto;min-height:42px;padding:6px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-size:15px;font-weight:700;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ai);border-color:var(--ai);color:var(--on-ai)}
+
+/* 人数ステッパー */
+.stepper{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.stepper button{width:48px;height:44px;border:0;background:transparent;font-size:22px;font-weight:700}
+.stepper output{min-width:56px;text-align:center;font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
+.names{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.name-in{min-width:0;display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:10px;background:var(--surface);padding-left:10px}
+.name-in span{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:1.4em}
+.name-in input{flex:1;min-width:0;width:100%;border:0;background:transparent;min-height:42px;font-size:16px;padding:4px 8px 4px 0}
+.name-in input:focus{outline:none}
+.name-in:focus-within{border-color:var(--ai)}
+
+/* ピル・バッジ */
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;background:var(--surface-2);font-size:14px;font-weight:700;font-variant-numeric:tabular-nums}
+.pill.gold{background:var(--gold);color:var(--on-gold)}
+.pill.warn{background:var(--bad);color:#fff}
+.tag{display:inline-block;padding:2px 8px;border-radius:6px;background:var(--gold-soft);color:var(--fg);font-size:12px;font-weight:700}
+
+/* 大きな名前表示 */
+.big-name{font-family:var(--f-display);font-weight:400;font-size:clamp(34px,11vw,52px);line-height:1.2;text-align:center;word-break:break-all;margin:0}
+
+/* モーダル */
+.modal{position:fixed;inset:0;z-index:50;background:var(--scrim);display:flex;align-items:flex-end;justify-content:center;padding:16px;padding-bottom:max(16px,env(safe-area-inset-bottom,0px))}
+.modal-card{width:100%;max-width:520px;max-height:85vh;overflow:auto;background:var(--surface);color:var(--fg);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px;animation:rise .18s ease-out}
+.modal-msg{margin:0;font-size:17px;line-height:1.6;white-space:pre-wrap}
+.modal-actions{display:flex;gap:10px}
+.modal-actions .btn{flex:1}
+.rules h3{margin:8px 0 0;font-size:16px}
+.rules p,.rules ul,.rules ol{margin:0;font-size:15px}
+.rules ul,.rules ol{padding-left:1.3em}
+.rules li+li{margin-top:4px}
+@keyframes rise{from{transform:translateY(16px);opacity:.4}to{transform:none;opacity:1}}
+
+/* トースト */
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);z-index:60;max-width:calc(100% - 32px);padding:10px 16px;border-radius:12px;background:var(--fg);color:var(--bg);font-size:14px;font-weight:700;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* コード表示 */
+.code-box{font-family:ui-monospace,Menlo,monospace;font-size:12px;line-height:1.4;min-height:84px;max-height:140px;word-break:break-all}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
+
+.m0{margin:0}
+.choice-big{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:16px 18px;min-height:72px}
+.choice-big small{font-weight:500;font-size:13px;opacity:.85}
+.status{font-size:14px;font-weight:700;margin:0}
+.status.ng{color:var(--bad)}
+.notice{background:var(--gold-soft);border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.6;margin:0}
+.notice.alert{background:var(--bad-soft);border:1px solid var(--bad)}
+
+/* 部屋 */
+.room{display:flex;flex-direction:column;align-items:center;gap:4px;padding:16px;border-radius:var(--r);background:var(--head-bg);color:var(--head-fg)}
+.room small{font-size:12px;opacity:.8;letter-spacing:.1em}
+.room-code{font-family:var(--f-display);font-size:40px;letter-spacing:.16em;line-height:1.1}
+.members{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.members li{display:flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;border-radius:12px;background:var(--surface-2);font-weight:700;min-height:44px}
+.members li.me{background:var(--gold-soft)}
+.members .seat{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;min-width:1.6em}
+.members .nm{flex:1;min-width:0;word-break:break-all}
+.members .tag-host{font-size:11px;padding:1px 6px;border-radius:6px;background:var(--ai);color:var(--on-ai)}
+.members .rdy{font-size:11px;padding:1px 6px;border-radius:6px;background:var(--good);color:#fff}
+.members .rtt{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--muted)}
+.members .rtt.good{color:var(--good)}
+.members .rtt.bad{color:var(--bad)}
+.members .mini{width:32px;height:32px;border-radius:50%;border:1px solid var(--line);background:var(--surface);font-size:14px;line-height:1;padding:0}
+
+/* ゲームえらび */
+.gamegrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.gcard{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;padding:12px;border-radius:14px;border:2px solid var(--line);background:var(--surface);min-height:96px}
+.gcard b{font-family:var(--f-display);font-weight:400;font-size:17px;line-height:1.25}
+.gcard span{font-size:12px;color:var(--muted);line-height:1.45}
+.gcard .tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:auto}
+.gcard .tags i{font-style:normal;font-size:11px;font-weight:700;padding:1px 6px;border-radius:6px;background:var(--surface-2);color:var(--fg)}
+.gcard[aria-pressed="true"]{border-color:var(--gold);background:var(--gold-soft)}
+.gcard:disabled{opacity:.5}
+.optrow{display:flex;flex-direction:column;gap:6px}
+.optrow .label{font-size:14px;font-weight:700}
+
+/* 結果 */
+.ranks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.ranks li{display:grid;grid-template-columns:3em minmax(0,1fr) auto;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
+.ranks .pos{font-family:var(--f-display);font-size:18px;color:var(--muted)}
+.ranks .nm{font-weight:700;font-size:17px;word-break:break-all}
+.ranks .nm small{display:block;font-weight:500;font-size:12px;color:var(--muted)}
+.ranks .sc{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.ranks .plus{color:var(--good);font-size:13px;margin-left:4px}
+.ranks li.top{background:var(--gold);color:var(--on-gold);border-color:transparent}
+.ranks li.top .pos,.ranks li.top .nm small{color:var(--on-gold)}
+.big-title{font-family:var(--f-display);font-size:30px;line-height:1.3;text-align:center;margin:0;word-break:break-all}
+
+/* 暗号化・通信ログ */
+.lk{width:1em;height:1em;vertical-align:-.12em;flex:0 0 auto}
+.lockpill{display:inline-flex;align-items:center;gap:6px;margin-top:6px;padding:6px 14px;border-radius:999px;border:1px solid rgba(255,255,255,.35);background:rgba(255,255,255,.12);color:inherit;font:inherit;font-size:13px;font-weight:700}
+.secure{background:var(--good-soft);border-color:transparent}
+.logv{gap:12px}
+.logv .secbox{padding:12px 14px;border-radius:12px;background:var(--good-soft)}
+.logv .secbox .on{font-weight:700;color:var(--good);display:flex;align-items:center;gap:6px}
+.logv .kv{display:grid;grid-template-columns:minmax(0,1fr);gap:2px;margin:8px 0 0;font-size:13px}
+.logv .kv dt{font-weight:700;color:var(--muted);font-size:12px;margin-top:6px}
+.logv .kv dd{margin:0;word-break:break-all}
+.logv .seg button{flex:1 1 0;min-width:0;padding:6px;font-size:13px}
+.rules .loglist{padding-left:0}
+.rules .loglist li+li{margin-top:0}
+.logv .mono,.logv .wire{font-family:ui-monospace,Menlo,monospace;font-size:11px;word-break:break-all;line-height:1.45}
+.logv .verdict{margin:0;padding:10px 12px;border-radius:12px;font-weight:700;font-size:14px}
+.logv .verdict.ok{background:var(--surface-2)}
+.logv .verdict.warn{background:var(--bad-soft);color:var(--bad)}
+.logv .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.logv .stats div{padding:8px;border-radius:12px;background:var(--surface-2);text-align:center;font-size:12px}
+.logv .stats b{display:block;font-size:20px}
+.logv h3{margin:4px 0 0;font-size:15px}
+.loglist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.loglist li{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:8px;align-items:start;padding:8px 10px;border-radius:10px;background:var(--surface-2);font-size:13px}
+.loglist .tm{color:var(--muted);font-variant-numeric:tabular-nums}
+.loglist .dir{font-size:11px;font-weight:700;padding:1px 6px;border-radius:6px;background:var(--surface)}
+.loglist li.tx .dir{background:var(--ai);color:var(--on-ai)}
+.loglist li.ng{background:var(--bad-soft)}
+.loglist li.ng .dir{background:var(--bad);color:#fff}
+.loglist .k{font-weight:700}
+.loglist.people li{grid-template-columns:auto minmax(0,1fr)}
+.netpill{position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 60px);z-index:45;padding:6px 14px;border-radius:999px;background:var(--bad);color:#fff;font-size:13px;font-weight:700;box-shadow:var(--shadow);max-width:calc(100% - 24px);text-align:center}
+
+/* ゲーム中：画面いっぱい */
+:root{--hud-h:46px;--top:calc(env(safe-area-inset-top,0px) + var(--hud-h))}
+#stage{position:fixed;inset:0;z-index:25;display:none;background:var(--bg);overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+#hud{position:fixed;top:0;left:0;right:0;z-index:40;display:none;align-items:center;gap:6px;height:var(--top);padding:env(safe-area-inset-top,0px) max(8px,env(safe-area-inset-right,0px)) 0 max(8px,env(safe-area-inset-left,0px));background:color-mix(in srgb,var(--head-bg) 88%,transparent);color:var(--head-fg);pointer-events:none}
+#hud > *{pointer-events:auto}
+#hud .t{font-family:var(--f-display);font-size:15px;white-space:nowrap}
+#hud .sub{flex:1;min-width:0;font-size:12px;font-weight:700;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#hud .rtt{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;opacity:.85}
+#hud button{min-height:32px;min-width:40px;padding:2px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.3);background:transparent;color:inherit;font-size:13px;font-weight:700;display:inline-flex;align-items:center;gap:4px}
+body.playing{overflow:hidden;position:fixed;inset:0}
+body.playing #stage,body.playing #hud{display:flex}
+body.playing #stage{display:block}
+body.playing .bar,body.playing main{display:none}
+body.playing::before{display:none}
+.st-msg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(88%,420px);text-align:center;display:flex;flex-direction:column;gap:12px;align-items:center}
+.st-big{font-family:var(--f-display);font-size:clamp(28px,9vw,44px);line-height:1.2;margin:0}
+.countdown{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--f-display);font-size:min(40vw,40vh);color:var(--gold);text-shadow:0 4px 0 rgba(0,0,0,.25);pointer-events:none;z-index:5}
+.sensor-ask{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);transform:translateX(-50%);z-index:8;width:min(92%,420px)}
+</style>
+</head>
+<body>
+<header class="bar">
+  <a class="bar-back" href="index.html" id="backBtn">トップ</a>
+  <h1 class="bar-title">みんなで対戦</h1>
+  <button class="bar-btn" id="helpBtn" type="button">遊び方</button>
+</header>
+<div class="netpill" id="netPill" role="status" hidden>通信が切れた。つなぎ直してるよ…</div>
+
+<div id="hud" role="toolbar" aria-label="ゲームのメニュー">
+  <span class="t" id="hudTitle">-</span>
+  <span class="sub" id="hudSub"></span>
+  <span class="rtt" id="hudRtt"></span>
+  <button type="button" class="js-log" aria-label="通信ログ（暗号化中）"><svg class="lk" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7.5" rx="1.6" fill="currentColor"/><path d="M5.2 7V5.2a2.8 2.8 0 0 1 5.6 0V7" fill="none" stroke="currentColor" stroke-width="1.7"/></svg></button>
+  <button type="button" id="hudMenu">メニュー</button>
+</div>
+<div id="stage" aria-live="polite"></div>
+
+<main class="wrap">
+  <!-- はじめ -->
+  <section id="sHome" class="screen">
+    <div class="stack">
+      <p class="eyebrow">全員が自分のスマホで・ネット必要</p>
+      <h2 class="h2">1つの部屋に集まって、6つの対戦ゲームを好きな順に</h2>
+      <p class="lead">幹事が部屋を作ってリンクを送ると、みんなのスマホがつながる。一度入れば、ゲームを変えても入り直さなくていい。勝つと総合ポイントがたまっていくよ。</p>
+    </div>
+    <p class="notice alert" id="frameNotice" hidden>claude.ai の中では通信ができないから遊べないよ。ゲームのURLを Safari で開いてね。</p>
+    <div id="resumeBox" class="panel" hidden>
+      <p class="m0" id="resumeText"></p>
+      <button class="btn primary" id="resumeBtn" type="button">さっきの部屋にもどる</button>
+    </div>
+    <div class="actions">
+      <button class="btn big gold choice-big" id="goCreate" type="button">部屋を作る<small>幹事が1人だけ。部屋のリンクをLINEで送る</small></button>
+      <button class="btn big primary choice-big" id="goJoin" type="button">部屋に入る<small>幹事から届いたリンクで入る</small></button>
+    </div>
+    <div class="panel">
+      <p class="panel-title">遊べるゲーム</p>
+      <div class="gamegrid" id="homeGames"></div>
+    </div>
+  </section>
+
+  <!-- 部屋を作る -->
+  <section id="sCreate" class="screen" hidden>
+    <div class="stack"><p class="eyebrow">幹事</p><h2 class="h2">部屋を作る</h2></div>
+    <div class="field"><label for="cName">あなたの名前</label><input id="cName" class="input" maxlength="10" autocomplete="off" placeholder="あだ名でOK（本名は入れなくていい）"></div>
+    <button class="btn big gold" id="createBtn" type="button">部屋を作る</button>
+    <p class="status" id="createStatus" role="status"></p>
+    <button class="btn wide ghost" type="button" data-home>はじめの画面へ</button>
+  </section>
+
+  <!-- 部屋に入る -->
+  <section id="sJoin" class="screen" hidden>
+    <div class="stack"><p class="eyebrow">参加</p><h2 class="h2">部屋に入る</h2></div>
+    <div class="panel secure" id="jRoomBox" hidden>
+      <p class="m0">部屋 <b class="num" id="jRoom">-----</b> に入るよ</p>
+      <p class="m0 small"><svg class="lk" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7.5" rx="1.6" fill="currentColor"/><path d="M5.2 7V5.2a2.8 2.8 0 0 1 5.6 0V7" fill="none" stroke="currentColor" stroke-width="1.7"/></svg> 鍵はリンクに入ってた。この部屋のやりとりは全部暗号化される。</p>
+    </div>
+    <div class="field" id="jLinkField"><label for="jLink">幹事から届いたリンク</label>
+      <textarea id="jLink" class="textarea" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="LINEのメッセージを長押し →「コピー」→ ここに貼り付け"></textarea>
+      <p class="hint">部屋の番号だけでは入れないよ（鍵がリンクの中にあるから）。</p>
+    </div>
+    <div class="field"><label for="jName">あなたの名前</label><input id="jName" class="input" maxlength="10" autocomplete="off" placeholder="あだ名でOK（本名は入れなくていい）"></div>
+    <button class="btn big primary" id="joinBtn" type="button">入る</button>
+    <p class="status" id="joinStatus" role="status"></p>
+    <button class="btn wide ghost" type="button" data-home>はじめの画面へ</button>
+  </section>
+
+  <!-- 待合室 -->
+  <section id="sLobby" class="screen" hidden>
+    <div class="room"><small>部屋の番号</small><span class="room-code" id="lCode">-----</span>
+      <button class="lockpill js-log" type="button"><svg class="lk" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7.5" rx="1.6" fill="currentColor"/><path d="M5.2 7V5.2a2.8 2.8 0 0 1 5.6 0V7" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>暗号化中 ・ 通信ログを見る</button></div>
+    <div class="panel" id="lShare" hidden>
+      <p class="panel-title">みんなを呼ぶ</p>
+      <p class="m0 small">このリンクをLINEのグループに送ってね。タップすると、そのままこの部屋に入れる。<b>リンクには部屋の鍵が入ってる</b>から、グループの外には出さないでね。</p>
+      <textarea class="textarea code-box" id="lLink" readonly aria-label="部屋のリンク"></textarea>
+      <div class="row"><button class="btn primary" id="lShareBtn" type="button">LINEなどで送る</button><button class="btn" id="lCopyBtn" type="button">コピー</button></div>
+    </div>
+    <div class="panel" id="lReadyBox">
+      <p class="m0 small" id="lReadyText">傾きや振る動きを使うゲームがあるから、最初にセンサーをオンにしてね。</p>
+      <button class="btn big gold" id="readyBtn" type="button">センサーをオンにして準備OK</button>
+    </div>
+    <div class="panel">
+      <div class="row"><p class="panel-title m0" id="lCount">集まった人</p><span class="spacer"></span><span class="small muted" id="lMyRtt"></span></div>
+      <ul class="members" id="lMembers"></ul>
+      <p class="hint m0" id="lSeatHint">数字は席の順番。爆弾リレーはこの順に時計回りで座ってね。秒数は幹事のスマホまでの通信の往復時間（0.3秒以下ならOK）。</p>
+    </div>
+    <div class="panel" id="lPick">
+      <p class="panel-title" id="lPickTitle">ゲームをえらぶ</p>
+      <div class="gamegrid" id="lGames"></div>
+      <div class="stack" id="lOpts"></div>
+      <button class="btn big gold" id="startBtn" type="button" hidden>スタート</button>
+      <p class="notice" id="lWait" hidden>幹事がスタートするのを待ってね。画面はつけたままにしておこう。</p>
+    </div>
+    <div class="panel" id="lTotalBox" hidden>
+      <p class="panel-title">総合ポイント</p>
+      <ol class="ranks" id="lTotal"></ol>
+      <button class="btn sm ghost" id="resetPts" type="button" hidden>総合ポイントをリセット</button>
+    </div>
+    <button class="btn wide danger" id="closeBtn" type="button" hidden>部屋を閉じて終わる（サーバーの保存分も消す）</button>
+    <button class="btn wide ghost" id="leaveBtn" type="button">部屋を出る</button>
+  </section>
+
+  <!-- ゲームの結果 -->
+  <section id="sResult" class="screen" hidden>
+    <div class="stack center"><p class="eyebrow" id="rGame">結果</p><p class="big-title" id="rTitle">-</p><p class="lead m0" id="rNote"></p></div>
+    <div class="panel"><p class="panel-title">このゲームの順位</p><ol class="ranks" id="rRank"></ol></div>
+    <div class="panel"><p class="panel-title">総合ポイント</p><ol class="ranks" id="rTotal"></ol></div>
+    <button class="btn big gold" id="againBtn" type="button" hidden>もう一回</button>
+    <button class="btn wide primary" id="toLobbyBtn" type="button" hidden>ほかのゲームをえらぶ</button>
+    <p class="notice" id="rWait" hidden>幹事が次のゲームを決めるのを待ってね。</p>
+  </section>
+</main>
+
+<script>
+/* 旅宴ゲーム 共通スクリプト（ネット不要で動く部品だけ） */
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+function h(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue;
+    if (k === 'class') e.className = v;
+    else if (k === 'text') e.textContent = v;
+    else if (k === 'html') e.innerHTML = v;
+    else if (k.startsWith('on') && typeof v === 'function') e.addEventListener(k.slice(2), v);
+    else if (k === 'style') e.style.cssText = v;
+    else e.setAttribute(k, v === true ? '' : v);
+  }
+  for (const kid of kids.flat(Infinity)) {
+    if (kid == null || kid === false) continue;
+    e.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+  }
+  return e;
+}
+
+/* 端末内の保存（使えない環境でも落ちない） */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } },
+  del(k) { try { localStorage.removeItem(k); } catch (e) {} }
+};
+
+/* 合言葉から毎回同じ乱数を作る */
+function hashStr(str) {
+  let h1 = 1779033703, h2 = 3144134277, h3 = 1013904242, h4 = 2773480762;
+  for (let i = 0, k; i < str.length; i++) {
+    k = str.charCodeAt(i);
+    h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
+    h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
+    h3 = h4 ^ Math.imul(h3 ^ k, 951274213);
+    h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
+  }
+  h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
+  h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+  return ((h1 ^ h2) >>> 0);
+}
+function rng(seed) {
+  let a = typeof seed === 'number' ? seed >>> 0 : hashStr(String(seed));
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function shuffle(arr, rand = Math.random) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function pick(arr, rand = Math.random) { return arr[Math.floor(rand() * arr.length)]; }
+function randomId(len = 6) {
+  const cs = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = '';
+  const buf = new Uint32Array(len);
+  (window.crypto || {}).getRandomValues ? crypto.getRandomValues(buf) : buf.forEach((_, i) => buf[i] = Math.random() * 1e9);
+  for (let i = 0; i < len; i++) s += cs[buf[i] % cs.length];
+  return s;
+}
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/* LINEで送れる「コード」にする（圧縮→base64url、最後に ~） */
+function b64u(bytes) {
+  let s = '';
+  for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function unb64u(str) {
+  str = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (str.length % 4) str += '=';
+  const bin = atob(str);
+  const b = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) b[i] = bin.charCodeAt(i);
+  return b;
+}
+async function pipeBytes(bytes, stream) {
+  const s = new Blob([bytes]).stream().pipeThrough(stream);
+  return new Uint8Array(await new Response(s).arrayBuffer());
+}
+async function encodeCode(prefix, obj) {
+  const raw = new TextEncoder().encode(JSON.stringify(obj));
+  if (typeof CompressionStream !== 'undefined') {
+    try {
+      const z = await pipeBytes(raw, new CompressionStream('deflate-raw'));
+      if (z.length < raw.length) return prefix + '.z' + b64u(z) + '~';
+    } catch (e) {}
+  }
+  return prefix + '.r' + b64u(raw) + '~';
+}
+/* 貼り付けた文章からコードを全部取り出す（LINEの名前や時刻が混ざってもOK） */
+async function decodeCodes(text, prefix) {
+  const flat = String(text || '').replace(/\s+/g, '');
+  const re = new RegExp(prefix.replace(/\./g, '\\.') + '\\.([zr])([A-Za-z0-9_-]+)~', 'g');
+  const out = [];
+  let m;
+  while ((m = re.exec(flat))) {
+    try {
+      let bytes = unb64u(m[2]);
+      if (m[1] === 'z') {
+        if (typeof DecompressionStream === 'undefined') throw new Error('old');
+        bytes = await pipeBytes(bytes, new DecompressionStream('deflate-raw'));
+      }
+      out.push(JSON.parse(new TextDecoder().decode(bytes)));
+    } catch (e) { out.push({ __error: e.message === 'old' ? 'old' : 'broken' }); }
+  }
+  return out;
+}
+
+/* 画面の切り替え */
+function show(id) {
+  $$('.screen').forEach(s => { s.hidden = s.id !== id; });
+  window.scrollTo(0, 0);
+}
+
+/* トースト・確認ダイアログ（ブラウザの confirm は使わない） */
+function toast(msg, ms = 2200) {
+  let t = $('#toast');
+  if (!t) { t = h('div', { id: 'toast', class: 'toast', role: 'status', 'aria-live': 'polite' }); document.body.append(t); }
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), ms);
+}
+function ask(msg, opt = {}) {
+  const { ok = 'OK', cancel = 'やめる', danger = false } = opt;
+  return new Promise(res => {
+    const prev = document.activeElement;
+    const close = v => { dlg.remove(); if (prev && prev.focus) prev.focus(); res(v); };
+    const okBtn = h('button', { class: 'btn ' + (danger ? 'danger' : 'primary'), onclick: () => close(true) }, ok);
+    const dlg = h('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', onclick: e => { if (e.target === dlg && cancel) close(false); } },
+      h('div', { class: 'modal-card' },
+        h('p', { class: 'modal-msg' }, msg),
+        h('div', { class: 'modal-actions' }, cancel ? h('button', { class: 'btn', onclick: () => close(false) }, cancel) : null, okBtn)));
+    document.body.append(dlg);
+    okBtn.focus();
+  });
+}
+function sheet(title, bodyNode) {
+  const dlg = h('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-label': title, onclick: e => { if (e.target === dlg) dlg.remove(); } },
+    h('div', { class: 'modal-card rules' },
+      h('h2', { class: 'h2' }, title),
+      bodyNode,
+      h('button', { class: 'btn primary wide', onclick: () => dlg.remove() }, 'とじる')));
+  document.body.append(dlg);
+  $('button', dlg).focus();
+}
+
+/* コピー・共有 */
+async function copyText(text, fallbackEl) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('コピーした！LINEに貼りつけて送ってね');
+    return true;
+  } catch (e) {
+    if (fallbackEl) { fallbackEl.focus(); fallbackEl.select(); try { fallbackEl.setSelectionRange(0, text.length); } catch (_) {} }
+    toast('自動でコピーできなかったから、文字を長押しして「コピー」してね', 3600);
+    return false;
+  }
+}
+async function shareText(text, fallbackEl) {
+  if (navigator.share) {
+    try { await navigator.share({ text }); return true; }
+    catch (e) { if (e && e.name === 'AbortError') return false; }
+  }
+  return copyText(text, fallbackEl);
+}
+
+/* 効果音（最初のタップ後に鳴る） */
+const Sound = (() => {
+  let ctx = null;
+  let on = store.get('tabi.sound', true);
+  function ac() {
+    if (!on) return null;
+    if (!ctx) { const C = window.AudioContext || window.webkitAudioContext; if (!C) return null; try { ctx = new C(); } catch (e) { return null; } }
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+  function tone(freq, dur = 0.12, type = 'sine', vol = 0.2, when = 0) {
+    const c = ac(); if (!c) return;
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.value = freq;
+    const t = c.currentTime + when;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(c.destination);
+    o.start(t); o.stop(t + dur + 0.03);
+  }
+  function noise(dur = 0.3, vol = 0.2, freq = 1000, when = 0) {
+    const c = ac(); if (!c) return;
+    const len = Math.floor(c.sampleRate * dur);
+    const buf = c.createBuffer(1, len, c.sampleRate);
+    const d = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = c.createBufferSource(); src.buffer = buf;
+    const f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = freq; f.Q.value = 0.8;
+    const g = c.createGain(); g.gain.value = vol;
+    src.connect(f).connect(g).connect(c.destination);
+    src.start(c.currentTime + when);
+  }
+  return {
+    get on() { return on; },
+    set on(v) { on = !!v; store.set('tabi.sound', on); },
+    unlock() { ac(); },
+    tone, noise,
+    tick() { tone(880, 0.05, 'square', 0.05); },
+    pop() { tone(660, 0.07, 'triangle', 0.12); },
+    ding() { tone(988, 0.14, 'sine', 0.2); tone(1319, 0.28, 'sine', 0.16, 0.11); },
+    buzz() { tone(150, 0.4, 'sawtooth', 0.12); },
+    splash() { noise(0.28, 0.22, 800); },
+    fanfare() { [523, 659, 784, 1047].forEach((f, i) => tone(f, i === 3 ? 0.5 : 0.18, 'triangle', 0.18, i * 0.12)); },
+    drum(n = 18) { for (let i = 0; i < n; i++) noise(0.06, 0.08 + i * 0.008, 180 + i * 6, i * 0.07); }
+  };
+})();
+document.addEventListener('pointerdown', () => Sound.unlock(), { once: true });
+
+/* 画面が暗くならないようにする（使えない端末では何もしない） */
+const Wake = {
+  want: false, lock: null,
+  async on() { this.want = true; if (this.lock && !this.lock.released) return; try { if ('wakeLock' in navigator && document.visibilityState === 'visible') this.lock = await navigator.wakeLock.request('screen'); } catch (e) {} },
+  off() { this.want = false; try { this.lock && this.lock.release(); } catch (e) {} this.lock = null; }
+};
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && Wake.want) Wake.on(); });
+
+/* タイマー */
+class Countdown {
+  constructor(sec, onTick, onEnd) { this.total = sec; this.onTick = onTick; this.onEnd = onEnd; this.t0 = 0; this.id = 0; this.lastWhole = null; }
+  start() {
+    this.t0 = performance.now();
+    this.stop();
+    const loop = () => {
+      const left = Math.max(0, this.total - (performance.now() - this.t0) / 1000);
+      const whole = Math.ceil(left);
+      if (whole !== this.lastWhole) { this.lastWhole = whole; this.onTick && this.onTick(whole, left); }
+      if (left <= 0) { this.id = 0; this.onEnd && this.onEnd(); return; }
+      this.id = requestAnimationFrame(loop);
+    };
+    this.id = requestAnimationFrame(loop);
+    return this;
+  }
+  stop() { if (this.id) cancelAnimationFrame(this.id); this.id = 0; }
+}
+
+/* セグメント（選択ボタン） */
+function bindSeg(el, value, onChange) {
+  const btns = $$('button', el);
+  const set = v => { btns.forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v === String(v)))); };
+  set(value);
+  btns.forEach(b => b.addEventListener('click', () => { set(b.dataset.v); onChange(b.dataset.v); }));
+  return set;
+}
+
+/* 参加者の入力（全ゲームで名前を共有） */
+function PlayerEditor(root, opt = {}) {
+  const min = opt.min || 2, max = opt.max || 16;
+  let names = store.get('tabi.players', null);
+  let count = names ? clamp(names.length, min, max) : (opt.def || 10);
+  names = (names || []).slice(0, max);
+  const out = h('output', { class: 'num', 'aria-live': 'polite' }, count);
+  const grid = h('div', { class: 'names' });
+  function render() {
+    out.textContent = count;
+    grid.textContent = '';
+    for (let i = 0; i < count; i++) {
+      const inp = h('input', { id: (opt.idPrefix || 'p') + i, type: 'text', maxlength: '10', placeholder: (i + 1) + '番目の人', value: names[i] || '', autocomplete: 'off', enterkeyhint: 'next', 'aria-label': (i + 1) + '人目の名前' });
+      inp.addEventListener('input', () => { names[i] = inp.value.trim(); save(); });
+      grid.append(h('label', { class: 'name-in' }, h('span', {}, i + 1), inp));
+    }
+  }
+  function save() { store.set('tabi.players', names.slice(0, count)); }
+  const minus = h('button', { type: 'button', 'aria-label': '1人へらす', onclick: () => { if (count > min) { count--; render(); save(); } } }, '−');
+  const plus = h('button', { type: 'button', 'aria-label': '1人ふやす', onclick: () => { if (count < max) { count++; render(); save(); } } }, '+');
+  root.append(
+    h('div', { class: 'row' }, h('span', { class: 'label' }, '人数'), h('div', { class: 'stepper' }, minus, out, plus), h('span', { class: 'hint' }, '名前は空でもOK')),
+    grid);
+  render();
+  return {
+    get list() {
+      const seen = {};
+      return Array.from({ length: count }, (_, i) => {
+        let n = (names[i] || '').trim() || ((i + 1) + '番目の人');
+        if (seen[n]) { seen[n]++; n = n + seen[n]; } else seen[n] = 1;
+        return n;
+      });
+    }
+  };
+}
+
+/* ゲーム単体で開いた時用：オフライン対応（GitHub Pages などで有効、使えない環境では何もしない） */
+try {
+  if ('serviceWorker' in navigator && location.protocol === 'https:' && !/claude\.ai|claudeusercontent|anthropic/.test(location.hostname)) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+} catch (e) {}
+
+/* 音のON/OFFボタン */
+function bindSoundBtn(btn) {
+  if (!btn) return;
+  const paint = () => { btn.textContent = Sound.on ? '音あり' : '音なし'; btn.setAttribute('aria-pressed', String(Sound.on)); };
+  paint();
+  btn.addEventListener('click', () => { Sound.on = !Sound.on; paint(); if (Sound.on) Sound.pop(); });
+}
+
+</script>
+<script src="mqtt.min.js"></script>
+<script>
+'use strict';
+/* ===== 設定 ===== */
+const params = new URLSearchParams(location.search);
+const TEST_BROKER = params.get('broker');
+/* 通信の中継（無料の公開サーバー）。つながった所を部屋の番号の最後の1文字に入れる */
+const BROKERS = TEST_BROKER ? [{ id: 't', url: TEST_BROKER }] : [
+  { id: 'h', url: 'wss://broker.hivemq.com:8884/mqtt' },
+  { id: 'e', url: 'wss://broker.emqx.io:8084/mqtt' },
+  { id: 'c', url: 'wss://mqtt.eclipseprojects.io/mqtt' }
+];
+const inFrame = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
+const MAX_PLAYERS = 16;
+/* 自分のIDは部屋ごとに新しく作る。保存するのは名前だけ */
+const me = { id: randomId(8), name: String((store.get('tabi.party.me', {}) || {}).name || '') };
+const saveMe = () => store.set('tabi.party.me', { name: me.name });
+saveMe();
+/* ゲームは party/*.js が Party.register で登録する */
+const GAMES = {}, ORDER = [];
+const Party = { register(def) { GAMES[def.id] = def; ORDER.push(def.id); } };
+let client = null, ROOM = null, S = null, isHost = false, BROKER = '', closing = false, goneTimer = 0, cur = null;
+const nameOf = id => { const p = S && S.players.find(x => x.id === id); return p ? p.name : (S && S.names && S.names[id]) || '？'; };
+const net = (show, text) => { const p = $('#netPill'); if (text) p.textContent = text; p.hidden = !show; };
+/* null や false を飛ばして要素を足す */
+const add = (el, ...kids) => { el.append(...kids.flat(Infinity).filter(k => k != null && k !== false)); return el; };
+const LOCK_SVG = '<svg class="lk" viewBox="0 0 16 16" aria-hidden="true"><rect x="3" y="7" width="10" height="7.5" rx="1.6" fill="currentColor"/><path d="M5.2 7V5.2a2.8 2.8 0 0 1 5.6 0V7" fill="none" stroke="currentColor" stroke-width="1.7"/></svg>';
+
+/* ===== センサー（傾き・動き）：iPhoneは許可のボタンを押した時だけ使える ===== */
+const Motion = {
+  state: 'unknown', subs: new Set(), attached: false,
+  get ok() { return this.state === 'granted'; },
+  async request() {
+    try {
+      const DM = window.DeviceMotionEvent, DO = window.DeviceOrientationEvent;
+      if (DM && typeof DM.requestPermission === 'function') {
+        // 2つとも、押したその場で聞く（待ってから聞くとiPhoneに断られる）
+        const rs = await Promise.all([
+          DM.requestPermission().catch(() => 'denied'),
+          DO && typeof DO.requestPermission === 'function' ? DO.requestPermission().catch(() => 'denied') : Promise.resolve('granted')]);
+        this.state = rs[0] === 'granted' ? 'granted' : 'denied';
+      } else this.state = DM ? 'granted' : 'unsupported';
+    } catch (e) { this.state = 'denied'; }
+    if (this.ok) this.attach();
+    return this.ok;
+  },
+  attach() {
+    if (this.attached) return; this.attached = true;
+    window.addEventListener('devicemotion', e => this.emit('motion', e));
+    window.addEventListener('deviceorientation', e => this.emit('orient', e));
+  },
+  emit(type, e) { this.subs.forEach(fn => { try { fn(type, e); } catch (err) { console.warn(err); } }); },
+  on(fn) { this.subs.add(fn); return () => this.subs.delete(fn); },
+  inject(type, e) { this.emit(type, e); }   // 動作テスト用
+};
+/* 振った回数を数える（重力を引いた動きの強さが、しきい値を上→下に越えたら1回） */
+function makeShaker(onShake, opt = {}) {
+  const hi = opt.hi || 13, lo = opt.lo || 6, gap = opt.gap || 90;
+  let armed = true, last = 0, init = false, gx = 0, gy = 0, gz = 0;
+  return Motion.on((type, e) => {
+    if (type !== 'motion') return;
+    let x, y, z;
+    const a = e.acceleration;
+    if (a && a.x != null && !opt.withGravity) { x = a.x; y = a.y; z = a.z; }
+    else {
+      const g = e.accelerationIncludingGravity; if (!g || g.x == null) return;
+      if (!init) { gx = g.x; gy = g.y; gz = g.z; init = true; }
+      gx += (g.x - gx) * 0.08; gy += (g.y - gy) * 0.08; gz += (g.z - gz) * 0.08;
+      x = g.x - gx; y = g.y - gy; z = g.z - gz;
+    }
+    const m = Math.hypot(x, y, z), now = performance.now();
+    if (armed && m > hi && now - last > gap) { armed = false; last = now; onShake(m); }
+    else if (!armed && m < lo) armed = true;
+  });
+}
+
+/* ===== 通信（中身はすべて暗号化してから送る） =====
+  ・鍵（32バイトの乱数）は幹事のスマホで作り、部屋のリンクの「#」より後ろにだけ入れる。
+  ・中身は AES-GCM（256bit）で暗号化。サーバー上の置き場所の名前も鍵から作る。
+  ・同じメッセージの再送と、10分以上前のメッセージ（保存分を除く）は無視する。 */
+const tenc = new TextEncoder(), tdec = new TextDecoder();
+const canZip = typeof CompressionStream !== 'undefined' && typeof DecompressionStream !== 'undefined';
+async function zipBytes(bytes, pack) {
+  const st = new Blob([bytes]).stream().pipeThrough(pack ? new CompressionStream('deflate-raw') : new DecompressionStream('deflate-raw'));
+  return new Uint8Array(await new Response(st).arrayBuffer());
+}
+/* サーバーに見える置き場所の名前は意味のない1文字：a=参加者 b=進行 c=みんなへ d=幹事へ e=動きの速報 */
+const SUBS = { p: 'a', state: 'b', ev: 'c', up: 'd', fast: 'e' };
+const SUBS_R = Object.fromEntries(Object.entries(SUBS).map(([k, v]) => [v, k]));
+const Sec = {
+  key: null, kb: '', root: '', seen: new Set(), seenQ: [], mine: new Set(), mineQ: [],
+  newKey() { return b64u(crypto.getRandomValues(new Uint8Array(32))); },
+  async use(kb) {
+    const raw = unb64u(kb);
+    if (raw.length !== 32) throw new Error('badkey');
+    this.key = await crypto.subtle.importKey('raw', raw, 'AES-GCM', false, ['encrypt', 'decrypt']);
+    const tag = tenc.encode('tabiutage/party/'), all = new Uint8Array(tag.length + raw.length);
+    all.set(tag); all.set(raw, tag.length);
+    const hs = new Uint8Array(await crypto.subtle.digest('SHA-256', all));
+    this.root = 'z/' + Array.from(hs.slice(0, 12), b => b.toString(16).padStart(2, '0')).join('');
+    this.kb = kb;
+  },
+  remember(set, q, v) { set.add(v); q.push(v); if (q.length > 8000) set.delete(q.shift()); },
+  async seal(sub, obj) {
+    let body = tenc.encode(JSON.stringify({ t: Date.now(), d: obj })), ver = 1;
+    if (body.length > 1200 && canZip) { body = await zipBytes(body, true); ver = 2; }
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const ct = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: tenc.encode('tp1|' + ver + '|' + sub) }, this.key, body));
+    const out = new Uint8Array(13 + ct.length);
+    out[0] = ver; out.set(iv, 1); out.set(ct, 13);
+    this.remember(this.mine, this.mineQ, b64u(iv));
+    return b64u(out);
+  },
+  async open(sub, wire) {
+    if (!/^[A-Za-z0-9_-]{40,}$/.test(wire)) throw new Error('format');
+    const b = unb64u(wire), ver = b[0];
+    if ((ver !== 1 && ver !== 2) || b.length < 29) throw new Error('format');
+    const iv = b.slice(1, 13);
+    let pt = new Uint8Array(await crypto.subtle.decrypt({ name: 'AES-GCM', iv, additionalData: tenc.encode('tp1|' + ver + '|' + sub) }, this.key, b.slice(13)));
+    if (ver === 2) pt = await zipBytes(pt, false);
+    return { iv: b64u(iv), msg: JSON.parse(tdec.decode(pt)) };
+  },
+  reset() { this.key = null; this.kb = ''; this.root = ''; this.seen.clear(); this.seenQ = []; this.mine.clear(); this.mineQ = []; }
+};
+const wireTopic = sub => { const [k, ...rest] = sub.split('/'); return Sec.root + '/' + SUBS[k] + (rest.length ? '/' + rest.join('/') : ''); };
+const logicalSub = topic => {
+  if (!topic.startsWith(Sec.root + '/')) return null;
+  const t = topic.slice(Sec.root.length + 1).split('/'), k = SUBS_R[t[0]];
+  if (!k || (k === 'p') !== (t.length === 2) || t.length > 2) return null;
+  return [k, ...t.slice(1)].join('/');
+};
+/* サーバーに保存する分（進行・参加者）は12時間で自動で消える（MQTT 5 の有効期限） */
+const KEEP_SEC = 12 * 3600;
+function tryConnect(url, ver, timeoutMs) {
+  return new Promise((res, rej) => {
+    if (typeof mqtt === 'undefined') return rej(new Error('nolib'));
+    let done = false, c;
+    const fail = why => { if (done) return; done = true; clearTimeout(t); try { c.end(true); } catch (e) {} rej(new Error(why)); };
+    try { c = mqtt.connect(url, { clientId: 'c' + randomId(14), clean: true, keepalive: 20, reconnectPeriod: 2000, connectTimeout: timeoutMs, protocolVersion: ver }); }
+    catch (e) { return rej(e); }
+    const t = setTimeout(() => fail('timeout'), timeoutMs + 300);
+    c.once('connect', () => { if (done) return; done = true; clearTimeout(t); res(c); });
+    c.on('error', e => { if (e && (e.code === 1 || e.code === 132)) fail('proto'); });
+    c.once('close', () => fail('closed'));
+  });
+}
+async function connectTo(url, timeoutMs = 6000) {
+  try { return await tryConnect(url, 5, timeoutMs); }
+  catch (e) { if (e.message === 'timeout' || e.message === 'nolib') throw e; return tryConnect(url, 4, timeoutMs); }
+}
+const isV5 = () => !!(client && client.options && client.options.protocolVersion === 5);
+let txChain = Promise.resolve(), rxChain = Promise.resolve();
+const acks = new Set(), ownEmpty = {};
+function pub(sub, obj, opt = {}) {
+  if (!client || !Sec.key) return;
+  const c = client, topic = wireTopic(sub), o = Object.assign({ qos: 0, retain: false }, opt);
+  if (o.retain && obj != null && isV5()) o.properties = { messageExpiryInterval: KEEP_SEC };
+  txChain = txChain.then(async () => {
+    const body = obj == null ? '' : await Sec.seal(sub, obj);
+    if (!body) ownEmpty[topic] = (ownEmpty[topic] || 0) + 1;
+    const ack = new Promise(r => c.publish(topic, body, o, () => r()));
+    acks.add(ack); ack.then(() => acks.delete(ack));
+    Log.tx(sub, obj, body);
+  }).catch(e => console.warn(e));
+}
+async function flushTx(ms = 2500) { await txChain; await Promise.race([Promise.all([...acks]), new Promise(r => setTimeout(r, ms))]); }
+function setupClient() {
+  // 幹事以外は「幹事へ」の置き場所を受け取らない（通信量を減らす）
+  const subs = isHost ? [Sec.root + '/#'] : ['a/+', 'b', 'c', 'e'].map(x => Sec.root + '/' + x);
+  client.subscribe(subs, { qos: 1 });
+  client.on('message', onMsg);
+  client.on('offline', () => net(true, '通信が切れた。つなぎ直してるよ…'));
+  client.on('close', () => { if (client && !client.connected) net(true, '通信が切れた。つなぎ直してるよ…'); });
+  client.on('connect', () => { net(false); announce(); if (isHost && S) publishState(); else Clock.burst(); });
+  window.addEventListener('beforeunload', () => { try { client && client.end(true); } catch (e) {} });
+}
+function announce() { pub('p/' + me.id, { id: me.id, name: me.name }, { retain: true, qos: 1 }); }
+function onMsg(topic, buf, packet) {
+  const raw = buf ? buf.toString() : '', retained = !!(packet && packet.retain);
+  rxChain = rxChain.then(() => handleMsg(topic, raw, retained)).catch(e => console.warn(e));
+}
+async function handleMsg(topic, raw, retained) {
+  if (!Sec.key) return;
+  const sub = logicalSub(topic);
+  if (!sub) { Log.reject('bad', '?', raw); return; }
+  if (!raw) {
+    if (ownEmpty[topic] > 0) { ownEmpty[topic]--; return; }
+    Log.empty(sub);
+    if (sub === 'state' && S && !closing) {
+      if (isHost) publishState();
+      else { clearTimeout(goneTimer); goneTimer = setTimeout(() => { if (S && !isHost) roomClosed(); }, 8000); }
+    }
+    return;
+  }
+  let o;
+  try { o = await Sec.open(sub, raw); } catch (e) { Log.reject('bad', sub, raw); return; }
+  const own = Sec.mine.has(o.iv);
+  if (Sec.seen.has(o.iv)) { Log.reject('dup', sub, raw); return; }
+  Sec.remember(Sec.seen, Sec.seenQ, o.iv);
+  if (!retained && !own && Math.abs(Date.now() - (+o.msg.t || 0)) > 10 * 60 * 1000) { Log.reject('old', sub, raw); return; }
+  const m = o.msg.d;
+  if (!own) Log.rx(sub, m, raw);
+  if (own && !sub.startsWith('p/')) return;   // 自分が送ったものは、送った時にもう処理してある
+  dispatch(sub, m);
+}
+function dispatch(sub, m) {
+  if (!m || typeof m !== 'object') return;
+  if (sub.startsWith('p/')) { const id = sub.slice(2); notePerson(id, m); if (isHost) hostPresence(id, m); return; }
+  if (sub === 'state') {
+    if (m.closed) { if (!isHost) roomClosed(); return; }
+    if (!isHost && m.v === 1 && Array.isArray(m.players)) { clearTimeout(goneTimer); onState(m); }
+    return;
+  }
+  if (sub === 'ev') onEv(m);
+  else if (sub === 'up') { if (isHost) onUp(m); }
+  else if (sub === 'fast') onFast(m);
+}
+
+/* ===== 時計あわせ：幹事のスマホの時計に合わせる（同時スタート・順位の判定に使う） ===== */
+const Clock = {
+  off: 0, rtt: 0, samples: [], timer: 0, lastHb: 0, lat: {},
+  now() { return isHost ? Date.now() : Date.now() + this.off; },
+  ping() { if (!isHost && client && Sec.key) pub('up', { k: 'ping', f: me.id, t0: Date.now(), r: Math.round(this.rtt) }); },
+  burst() { for (let i = 0; i < 6; i++) setTimeout(() => this.ping(), i * 220); },
+  pong(m) {
+    const t1 = Date.now(), rtt = t1 - m.t0;
+    if (!(rtt >= 0 && rtt < 15000)) return;
+    this.samples.push({ rtt, off: m.th - (m.t0 + t1) / 2 });
+    if (this.samples.length > 12) this.samples.shift();
+    // いちばん早く返ってきた回の値が、いちばん正確
+    this.off = this.samples.reduce((a, x) => x.rtt < a.rtt ? x : a).off;
+    const rs = this.samples.slice(-5).map(x => x.rtt).sort((a, b) => a - b);
+    this.rtt = rs[rs.length >> 1];
+    paintRtt();
+  },
+  start() {
+    clearInterval(this.timer);
+    this.timer = setInterval(() => {
+      if (!client || !S) return;
+      if (isHost) pub('ev', { k: 'hb', th: Date.now(), lat: this.lat });
+      else {
+        this.ping();
+        const quiet = Date.now() - this.lastHb;
+        if (client.connected && this.lastHb && quiet > 10000) net(true, '幹事のスマホと通信できてない（幹事の画面が消えてるかも）');
+        else if (client.connected && $('#netPill').textContent.startsWith('幹事')) net(false);
+      }
+    }, 3000);
+  },
+  stop() { clearInterval(this.timer); this.timer = 0; this.samples = []; this.off = 0; this.rtt = 0; this.lastHb = 0; this.lat = {}; }
+};
+const fmtRtt = ms => ms ? (ms / 1000).toFixed(2) + '秒' : '…';
+function paintRtt() {
+  const t = isHost ? '幹事' : '往復 ' + fmtRtt(Clock.rtt);
+  $('#hudRtt').textContent = t; $('#lMyRtt').textContent = isHost ? 'あなたが幹事' : 'あなたの通信：' + fmtRtt(Clock.rtt);
+}
+
+/* ===== 受け取ったメッセージの振り分け ===== */
+function onEv(m) {
+  if (m.k === 'pong') { if (m.to === me.id) Clock.pong(m); return; }
+  if (m.k === 'hb') { Clock.lastHb = Date.now(); Clock.lat = m.lat || {}; if (S && S.phase === 'lobby') renderMembers(); return; }
+  if (m.k === 'kick') { if (m.id === me.id && !isHost) { toast('幹事が部屋から外したよ', 3500); forgetRoom(); home(); } return; }
+  if (cur && cur.mounted && m.gs === cur.gs && cur.def.onEvent) cur.def.onEvent(cur.ctx, m);
+}
+function onUp(m) {
+  if (!S) return;
+  if (m.k === 'ping') { pub('ev', { k: 'pong', to: m.f, t0: m.t0, th: Date.now() }); if (m.r) Clock.lat[m.f] = m.r; return; }
+  if (m.k === 'ready') {
+    if (!S.players.some(p => p.id === m.f)) return;
+    S.ready[m.f] = m.motion ? 2 : 1; publishState(); return;
+  }
+  if (cur && cur.mounted && m.gs === cur.gs && cur.def.hostInput && S.phase === 'play') cur.def.hostInput(cur.ctx, m);
+}
+function onFast(m) { if (cur && cur.mounted && m.gs === cur.gs && cur.def.onFast) cur.def.onFast(cur.ctx, m); }
+
+/* ===== 通信ログ（このスマホのメモリの中だけ） ===== */
+const hhmmss = t => new Date(t).toTimeString().slice(0, 8);
+const wirePreview = w => !w ? '（中身なし：サーバーの保存分を消す合図）' : w.length > 72 ? w.slice(0, 72) + '…（全部で' + w.length + '文字）' : w;
+const QUIET = new Set(['ping', 'pong', 'hb']);
+const Log = {
+  list: [], people: [], st: { tx: 0, txB: 0, rx: 0, rxB: 0, bad: 0, dup: 0, old: 0, del: 0, fast: 0 }, view: null, mode: 'plain', timer: 0, warned: false,
+  push(e) {
+    const last = this.list[0];
+    if (last && last.k === e.k && last.dir === e.dir && last.sum === e.sum && e.at - last.at < 4000) { last.n++; last.at = e.at; last.wire = e.wire; }
+    else { e.n = 1; this.list.unshift(e); if (this.list.length > 300) this.list.pop(); }
+    this.refresh();
+  },
+  quiet(sub, m) { return sub === 'fast' || (m && QUIET.has(m.k)); },
+  tx(sub, obj, wire) {
+    this.st.tx++; this.st.txB += wire.length;
+    if (sub === 'fast') this.st.fast++;
+    if (this.quiet(sub, obj)) return this.refresh();
+    this.push({ at: Date.now(), dir: 'tx', k: sub.split('/')[0], sum: summarize(sub, obj), wire: wirePreview(wire) });
+  },
+  rx(sub, m, wire) {
+    this.st.rx++; this.st.rxB += wire.length;
+    if (sub === 'fast') this.st.fast++;
+    if (this.quiet(sub, m)) return this.refresh();
+    this.push({ at: Date.now(), dir: 'rx', k: sub.split('/')[0], sum: summarize(sub, m), wire: wirePreview(wire) });
+  },
+  empty(sub) { this.st.del++; this.push({ at: Date.now(), dir: 'rx', k: sub.split('/')[0], sum: 'サーバーの保存分を消す合図（中身なし）', wire: wirePreview('') }); },
+  reject(type, sub, wire) {
+    this.st[type]++;
+    const why = { bad: '開けなかった（鍵がちがう・書きかえられた・部屋の外から）', dup: '同じメッセージが2回届いた（2回目は無視）', old: '10分以上前のメッセージ（無視）' }[type];
+    this.push({ at: Date.now(), dir: 'ng', k: String(sub).split('/')[0], sum: why, wire: wirePreview(wire) });
+    if (type === 'bad' && !this.warned) { this.warned = true; toast('読めないメッセージが届いたから無視したよ。くわしくは通信ログで', 3500); }
+  },
+  person(text) { this.people.unshift({ at: Date.now(), text }); if (this.people.length > 100) this.people.pop(); this.refresh(); },
+  clear() { this.list = []; this.people = []; Object.keys(this.st).forEach(k => this.st[k] = 0); this.refresh(); },
+  refresh() {
+    if (!this.view || !this.view.isConnected) { this.view = null; return; }
+    if (!this.timer) this.timer = setTimeout(() => { this.timer = 0; renderLog(); }, 500);
+  }
+};
+const KIND = { p: '参加', state: '進行', ev: 'みんなへ', up: '幹事へ', fast: '速報', '?': '不明' };
+function summarize(sub, m) {
+  if (m == null) return 'サーバーの保存分を消した';
+  if (sub.startsWith('p/')) return m.leave ? (m.name || '') + ' が部屋を出る' : '名前「' + (m.name || '') + '」';
+  if (sub === 'state') {
+    if (m.closed) return '部屋を閉じた';
+    if (!Array.isArray(m.players)) return '進行';
+    if (m.phase === 'lobby') return '待合室（' + m.players.length + '人）';
+    const t = (GAMES[m.game] || {}).title || 'ゲーム';
+    return m.phase === 'play' ? t + 'をプレイ中' : t + 'の結果';
+  }
+  if (m.k === 'ready') return '準備OK';
+  if (m.k === 'kick') return '部屋から外す';
+  const def = GAMES[(S && S.game) || ''];
+  const d = def && def.describe ? def.describe(m) : '';
+  return ((def && def.title) || 'ゲーム') + '：' + (d || '操作');
+}
+const seenPeople = new Map();
+function notePerson(id, m) {
+  const name = String(m.name || '？').slice(0, 10);
+  if (m.leave) { if (seenPeople.has(id)) { Log.person(name + ' が部屋を出た'); seenPeople.delete(id); } return; }
+  if (!seenPeople.has(id)) Log.person(name + (id === me.id ? '（自分）' : '') + ' が入った');
+  else if (seenPeople.get(id) !== name) Log.person(seenPeople.get(id) + ' が名前を「' + name + '」に変えた');
+  seenPeople.set(id, name);
+}
+function openLog() {
+  if (!client || !Sec.key) { toast('部屋に入ると見られるよ'); return; }
+  const body = h('div', { class: 'stack logv' });
+  sheet('通信ログ', body);
+  Log.view = body; renderLog();
+}
+function renderLog() {
+  const v = Log.view; if (!v || !v.isConnected) { Log.view = null; return; }
+  const st = Log.st, kb = n => (n / 1024).toFixed(1) + 'KB';
+  const host = (BROKER.match(/^wss?:\/\/([^/:]+)/) || [])[1] || BROKER;
+  v.textContent = '';
+  const modeBtn = (val, label) => h('button', { type: 'button', 'aria-pressed': String(Log.mode === val), onclick: () => { Log.mode = val; renderLog(); } }, label);
+  const list = h('ul', { class: 'loglist' });
+  Log.list.slice(0, 120).forEach(e => list.append(h('li', { class: e.dir },
+    h('span', { class: 'tm' }, hhmmss(e.at)),
+    h('span', { class: 'dir' }, e.dir === 'tx' ? '送信' : e.dir === 'rx' ? '受信' : 'はじいた'),
+    h('div', {}, h('div', { class: 'k' }, (KIND[e.k] || '不明') + (e.n > 1 ? ' ×' + e.n : '')),
+      Log.mode === 'wire' ? h('div', { class: 'wire' }, e.wire) : h('div', {}, e.sum)))));
+  const people = h('ul', { class: 'loglist people' });
+  Log.people.forEach(e => people.append(h('li', {}, h('span', { class: 'tm' }, hhmmss(e.at)), h('span', {}, e.text))));
+  v.append(
+    h('div', { class: 'secbox' },
+      h('p', { class: 'm0 on', html: LOCK_SVG + ' 暗号化：オン（AES-GCM 256bit）' }),
+      h('dl', { class: 'kv' },
+        h('dt', {}, '鍵の場所'), h('dd', {}, 'このスマホと、部屋のリンクの「#」より後ろだけ。サーバーにもGitHubにも送ってない'),
+        h('dt', {}, '中継サーバー'), h('dd', {}, host + '（無料の公開サーバー）'),
+        h('dt', {}, 'サーバーでの置き場所'), h('dd', { class: 'mono' }, Sec.root + '/…（鍵から作った、意味のない名前）'),
+        h('dt', {}, 'サーバーに見える物'), h('dd', {}, '意味のない文字の並び・大きさ・時刻・接続元のIPアドレス'))),
+    h('p', { class: 'verdict ' + (st.bad ? 'warn' : 'ok') }, st.bad
+      ? '⚠ 開けないメッセージを ' + st.bad + '件はじいた。部屋の外からの書き込みかも。鍵がないと中身は作れないから、ゲームには影響してないよ'
+      : '部屋の外からの書き込み：なし'),
+    h('div', { class: 'stats' },
+      h('div', {}, h('b', {}, st.tx), '送った（' + kb(st.txB) + '）'),
+      h('div', {}, h('b', {}, st.rx), '受け取った（' + kb(st.rxB) + '）'),
+      h('div', {}, h('b', {}, st.bad + st.dup + st.old), 'はじいた')),
+    h('p', { class: 'hint m0' }, 'はじいた内訳：開けない ' + st.bad + '・重複 ' + st.dup + '・古い ' + st.old + '　／　動きの速報 ' + st.fast + '件（多いので一覧には出さない）・時計あわせは一覧に出さない'),
+    h('p', { class: 'hint m0' }, '幹事のスマホまでの往復：' + (isHost ? '（あなたが幹事）' : fmtRtt(Clock.rtt))),
+    h('h3', {}, '部屋の出入り'),
+    Log.people.length ? people : h('p', { class: 'empty m0' }, 'まだ記録がないよ'),
+    h('h3', {}, '通信の記録（新しい順）'),
+    h('div', { class: 'seg' }, modeBtn('plain', 'スマホの中の中身'), modeBtn('wire', 'サーバーから見える形')),
+    h('p', { class: 'hint m0' }, Log.mode === 'wire' ? 'サーバーや、のぞき見した人にはこう見える。鍵がないと意味のない文字の並び。' : '自分のスマホで鍵を使って開けた中身。'),
+    Log.list.length ? list : h('p', { class: 'empty m0' }, 'まだ記録がないよ'),
+    h('p', { class: 'hint m0' }, 'この記録はこのスマホのメモリの中だけにある。どこにも送らないし、部屋を出るかページを閉じると消える。'),
+    h('button', { class: 'btn sm ghost', type: 'button', onclick: () => Log.clear() }, '記録を消す'));
+}
+document.addEventListener('click', e => { if (e.target.closest && e.target.closest('.js-log')) openLog(); });
+
+/* ===== 幹事のスマホ（部屋の進行役） ===== */
+function newState() {
+  return { v: 1, host: me.id, phase: 'lobby', players: [{ id: me.id, name: me.name }], names: {}, ready: {}, sel: ORDER[0], opts: {}, gseq: 0, game: null, g: null, pts: {}, last: null };
+}
+function publishState() {
+  if (!S) return;
+  store.set('tabi.party.hoststate', { room: ROOM, S });
+  pub('state', S, { retain: true, qos: 1 });
+  render();
+}
+function hostPresence(id, m) {
+  if (!S || !/^[A-Za-z0-9]{4,16}$/.test(id) || m.id !== id) return;
+  if (m.leave) {
+    if (id === S.host) return;
+    const p = S.players.find(x => x.id === id);
+    if (p) { S.names[id] = p.name; S.players = S.players.filter(x => x.id !== id); delete S.ready[id]; publishState(); }
+    return;
+  }
+  const name = String(m && m.name || '').trim().slice(0, 10) || '名無し';
+  const ex = S.players.find(p => p.id === id);
+  if (ex) { if (ex.name !== name) { ex.name = name; publishState(); } return; }
+  if (S.players.length >= MAX_PLAYERS) return;
+  S.players.push({ id, name });
+  publishState();
+  if (S.phase === 'lobby') Sound.pop();
+}
+const optsOf = id => { const def = GAMES[id]; const o = {}; (def.settings || []).forEach(s => { o[s.k] = s.def; }); return Object.assign(o, S.opts[id] || {}); };
+function newCur(gs) {
+  const def = GAMES[S.game];
+  const c = { gs, def, mounted: false, cleanups: [] };
+  c.ctx = makeCtx(c);
+  return c;
+}
+function hostStartGame(id) {
+  const def = GAMES[id]; if (!def || !isHost) return;
+  const ps = S.players.slice(0, def.max || MAX_PLAYERS).map(p => ({ id: p.id, name: p.name }));
+  if (ps.length < (def.min || 2)) { toast(def.title + 'は ' + (def.min || 2) + '人から遊べるよ'); return; }
+  unmountGame();
+  S.gseq++; S.game = id; S.phase = 'play'; S.last = null;
+  cur = newCur(S.gseq);
+  S.g = def.hostInit(cur.ctx, ps, optsOf(id));
+  publishState();
+}
+const GAIN = [10, 7, 5, 3];
+function hostFinish(res) {
+  const rows = (res.rows || []).slice();
+  const gains = res.gains || Object.fromEntries(rows.map(r => [r.id, GAIN[r.pos - 1] || 1]));
+  Object.entries(gains).forEach(([id, g]) => { S.pts[id] = (S.pts[id] || 0) + g; });
+  rows.forEach(r => { S.names[r.id] = nameOf(r.id); });
+  S.last = { game: S.game, title: res.title || '', note: res.note || '', rows, gains };
+  S.phase = 'result'; S.g = null;
+  publishState();
+  Sound.fanfare();
+}
+function hostAbort() { S.phase = 'lobby'; S.g = null; S.last = null; publishState(); }
+
+/* ===== 画面 ===== */
+function render() {
+  if (!S) return;
+  paintRtt();
+  if (S.phase === 'play' && GAMES[S.game]) { showPlay(); return; }
+  unmountGame();
+  if (S.phase === 'result' && S.last) { show('sResult'); renderResult(); }
+  else { show('sLobby'); renderLobby(); }
+}
+function onState(m) {
+  const first = !S;
+  S = m;
+  if (first) { Clock.burst(); Clock.start(); }
+  if (!S.players.some(p => p.id === me.id) && S.phase === 'lobby') {
+    // まだ名簿に載ってない（入った直後）。少し待っても載らなければ満員
+    setTimeout(() => { if (S && !S.players.some(p => p.id === me.id) && !isHost && S.phase === 'lobby') toast('満員みたい（' + MAX_PLAYERS + '人まで）', 3500); }, 5000);
+  }
+  render();
+}
+function renderMembers() {
+  const ul = $('#lMembers'); ul.textContent = '';
+  S.players.forEach((p, i) => {
+    const r = p.id === S.host ? 0 : (p.id === me.id && !isHost ? Clock.rtt : Clock.lat[p.id]);
+    const rdy = S.ready[p.id];
+    ul.append(h('li', { class: p.id === me.id ? 'me' : '' },
+      h('span', { class: 'seat' }, i + 1),
+      h('span', { class: 'nm' }, p.name),
+      p.id === S.host ? h('span', { class: 'tag-host' }, '幹事') : null,
+      rdy ? h('span', { class: 'rdy', title: rdy === 2 ? 'センサーOK' : 'センサーなし' }, rdy === 2 ? '準備OK' : 'OK（センサーなし）') : null,
+      p.id !== S.host && r ? h('span', { class: 'rtt ' + (r < 180 ? 'good' : r > 400 ? 'bad' : '') }, fmtRtt(r)) : null,
+      isHost && i > 0 ? h('button', { class: 'mini', type: 'button', 'aria-label': p.name + 'の席を1つ前へ', onclick: () => { const k = S.players.indexOf(p); [S.players[k - 1], S.players[k]] = [S.players[k], S.players[k - 1]]; publishState(); } }, '↑') : null,
+      isHost && p.id !== me.id ? h('button', { class: 'mini', type: 'button', 'aria-label': p.name + 'を部屋から外す', onclick: async () => {
+        if (!(await ask(p.name + ' を部屋から外す？', { ok: '外す', danger: true }))) return;
+        pub('ev', { k: 'kick', id: p.id }, { qos: 1 }); pub('p/' + p.id, null, { retain: true, qos: 1 });
+        S.names[p.id] = p.name; S.players = S.players.filter(x => x.id !== p.id); delete S.ready[p.id]; publishState();
+      } }, '×') : null));
+  });
+  $('#lCount').textContent = '集まった人（' + S.players.length + '人）';
+}
+function gameCard(id, opt = {}) {
+  const d = GAMES[id];
+  return h('button', { class: 'gcard', type: 'button', 'aria-pressed': String(!!opt.on), disabled: !!opt.disabled, onclick: opt.onclick },
+    h('b', {}, d.title), h('span', {}, d.short),
+    h('div', { class: 'tags' }, h('i', {}, d.min + '〜' + d.max + '人'), (d.tags || []).map(t => h('i', {}, t))));
+}
+function renderLobby() {
+  $('#lCode').textContent = ROOM || '-----';
+  $('#lShare').hidden = !isHost;
+  if (isHost) $('#lLink').value = roomLink();
+  const rdy = S.ready[me.id];
+  $('#readyBtn').hidden = !!rdy && Motion.ok;
+  $('#lReadyText').textContent = rdy ? (Motion.ok ? '準備OK！センサーもオンになってる。' : 'センサーが使えないから、画面のボタンで遊ぶゲームだけ参加できるよ（振る代わりに連打など）。') : '傾きや振る動きを使うゲームがあるから、最初にセンサーをオンにしてね。';
+  renderMembers();
+  // ゲームえらび
+  const grid = $('#lGames'); grid.textContent = '';
+  const sel = S.sel && GAMES[S.sel] ? S.sel : ORDER[0];
+  $('#lPickTitle').textContent = isHost ? 'ゲームをえらぶ' : '幹事がえらんでるゲーム';
+  if (isHost) ORDER.forEach(id => grid.append(gameCard(id, { on: id === sel, onclick: () => { S.sel = id; publishState(); } })));
+  else if (sel) grid.append(gameCard(sel, { on: true }));
+  const def = GAMES[sel], box = $('#lOpts'); box.textContent = '';
+  if (def) {
+    const o = optsOf(sel);
+    (def.settings || []).forEach(s => {
+      if (s.show && !s.show(o, S.players.length)) return;
+      const seg = h('div', { class: 'seg', role: 'group', 'aria-label': s.label });
+      s.opts.forEach(([v, label]) => seg.append(h('button', { type: 'button', 'aria-pressed': String(String(o[s.k]) === String(v)), disabled: !isHost, onclick: () => { S.opts[sel] = Object.assign(optsOf(sel), { [s.k]: v }); publishState(); } }, label)));
+      box.append(h('div', { class: 'optrow' }, h('span', { class: 'label' }, s.label), seg, s.hint ? h('p', { class: 'hint m0' }, s.hint) : null));
+    });
+    box.append(h('button', { class: 'btn sm ghost', type: 'button', onclick: () => sheet(def.title + 'の遊び方', h('div', { class: 'stack', html: def.rules })) }, def.title + 'の遊び方を見る'));
+  }
+  $('#startBtn').hidden = !isHost;
+  if (def) $('#startBtn').textContent = def.title + ' をスタート（' + Math.min(S.players.length, def.max) + '人）';
+  $('#lWait').hidden = isHost;
+  // 総合ポイント
+  const hasPts = Object.keys(S.pts).length > 0;
+  $('#lTotalBox').hidden = !hasPts;
+  if (hasPts) renderTotal($('#lTotal'));
+  $('#resetPts').hidden = !isHost;
+  $('#closeBtn').hidden = !isHost; $('#leaveBtn').hidden = isHost;
+}
+function totalRows() {
+  const ids = new Set([...S.players.map(p => p.id), ...Object.keys(S.pts)]);
+  const rows = [...ids].map(id => ({ id, n: nameOf(id), s: S.pts[id] || 0 })).sort((a, b) => b.s - a.s);
+  rows.forEach((r, i) => { r.pos = i && r.s === rows[i - 1].s ? rows[i - 1].pos : i + 1; });
+  return rows;
+}
+function renderTotal(ol, gains) {
+  ol.textContent = '';
+  totalRows().forEach(r => ol.append(h('li', { class: r.pos === 1 && r.s > 0 ? 'top' : '' }, h('span', { class: 'pos' }, r.pos + '位'), h('span', { class: 'nm' }, r.n), h('span', { class: 'sc' }, r.s + 'pt', gains && gains[r.id] ? h('span', { class: 'plus' }, '+' + gains[r.id]) : null))));
+}
+function renderResult() {
+  const L = S.last, def = GAMES[L.game] || { title: 'ゲーム' };
+  $('#rGame').textContent = def.title + 'の結果';
+  $('#rTitle').textContent = L.title || '結果発表';
+  $('#rNote').textContent = L.note || '';
+  const ol = $('#rRank'); ol.textContent = '';
+  L.rows.forEach(r => ol.append(h('li', { class: r.pos === 1 ? 'top' : '' }, h('span', { class: 'pos' }, r.pos + '位'), h('span', { class: 'nm' }, nameOf(r.id), r.sub ? h('small', {}, r.sub) : null), h('span', { class: 'sc' }, r.label || '', L.gains[r.id] ? h('span', { class: 'plus' }, '+' + L.gains[r.id] + 'pt') : null))));
+  renderTotal($('#rTotal'), L.gains);
+  $('#againBtn').hidden = !isHost; $('#toLobbyBtn').hidden = !isHost; $('#rWait').hidden = isHost;
+}
+
+/* ゲーム中の画面 */
+function makeCtx(c) {
+  const gs = c.gs;
+  const ctx = {
+    gs, me, H: {},
+    get isHost() { return isHost; },
+    get g() { return S && S.gseq === gs ? S.g : null; },
+    get players() { return (S && S.g && S.g.players) || []; },
+    nameOf, now: () => Clock.now(), rtt: () => (isHost ? 0 : Clock.rtt),
+    alive: () => !!(S && S.phase === 'play' && S.gseq === gs && cur === c),
+    stage: $('#stage'),
+    send(m, reliable) { m = Object.assign({ f: me.id, gs }, m); if (isHost) setTimeout(() => onUp(m)); else pub('up', m, { qos: reliable ? 1 : 0 }); },
+    broadcast(m, reliable) { m = Object.assign({ f: me.id, gs }, m); pub('ev', m, { qos: reliable ? 1 : 0 }); setTimeout(() => onEv(m)); },
+    fast(m) { pub('fast', Object.assign({ f: me.id, gs }, m)); },
+    setG(g) { if (isHost && ctx.alive()) { S.g = g; publishState(); } },
+    finish(res) { if (isHost && ctx.alive()) hostFinish(res); },
+    sub(text) { $('#hudSub').textContent = text || ''; },
+    onCleanup(fn) { c.cleanups.push(fn); },
+    raf(fn) { let id = 0, last = performance.now(); const loop = t => { if (!ctx.alive()) return; const dt = Math.min(0.05, (t - last) / 1000); last = t; fn(dt, t); id = requestAnimationFrame(loop); }; id = requestAnimationFrame(loop); c.cleanups.push(() => cancelAnimationFrame(id)); },
+    every(ms, fn) { const id = setInterval(() => { if (ctx.alive()) fn(); }, ms); c.cleanups.push(() => clearInterval(id)); },
+    later(ms, fn) { const id = setTimeout(() => { if (ctx.alive()) fn(); }, ms); c.cleanups.push(() => clearTimeout(id)); return id; },
+    listen(target, type, fn, opt) { target.addEventListener(type, fn, opt); c.cleanups.push(() => target.removeEventListener(type, fn, opt)); },
+    motion(fn) { c.cleanups.push(Motion.on(fn)); },
+    shaker(fn, opt) { c.cleanups.push(makeShaker(fn, opt)); },
+    /* センサーが未許可なら、押せば許可できるボタンを出す */
+    needSensor(onOk) {
+      if (Motion.ok) return null;
+      const box = h('div', { class: 'sensor-ask' }, h('button', { class: 'btn big gold', type: 'button', onclick: async () => { if (await Motion.request()) { box.remove(); ctx.send({ k: 'ready', motion: true }); onOk && onOk(); } else toast('センサーが使えなかった。「設定」→「Safari」→「モーションと画面の向きのアクセス」も確認してね', 4500); } }, 'センサーをオンにする'));
+      $('#stage').append(box);
+      return box;
+    },
+    /* 合図の時刻（幹事の時計）までのカウントダウン */
+    countdown(at, onGo) {
+      const el = h('div', { class: 'countdown', 'aria-live': 'assertive' });
+      $('#stage').append(el);
+      let lastN = null;
+      ctx.raf(() => {
+        const left = (at - Clock.now()) / 1000;
+        if (left <= 0) { if (el.isConnected) { el.textContent = 'GO!'; Sound.ding(); setTimeout(() => el.remove(), 600); onGo && onGo(); onGo = null; } return; }
+        const n = Math.ceil(left);
+        if (n !== lastN && n <= 3) { lastN = n; el.textContent = n; Sound.tick(); }
+      });
+      return el;
+    }
+  };
+  return ctx;
+}
+function showPlay() {
+  if (!cur || cur.gs !== S.gseq) { unmountGame(); cur = newCur(S.gseq); }
+  document.body.classList.add('playing');
+  Wake.on();
+  $('#hudTitle').textContent = cur.def.title;
+  if (!cur.mounted) {
+    $('#stage').textContent = '';
+    $('#hudSub').textContent = '';
+    cur.mounted = true;
+    try { cur.def.mount(cur.ctx, $('#stage')); } catch (e) { console.error(e); toast('画面の準備でエラーが出た'); }
+  }
+  try { cur.def.onState && cur.def.onState(cur.ctx, S.g); } catch (e) { console.error(e); }
+}
+function unmountGame() {
+  if (!cur) { document.body.classList.remove('playing'); return; }
+  const c = cur; cur = null;
+  c.cleanups.forEach(fn => { try { fn(); } catch (e) {} });
+  try { c.mounted && c.def.unmount && c.def.unmount(c.ctx); } catch (e) {}
+  $('#stage').textContent = '';
+  document.body.classList.remove('playing');
+}
+/* 幹事だけ：ゲームの時間を進める（20回/秒） */
+setInterval(() => { if (isHost && cur && cur.mounted && S && S.phase === 'play' && cur.def.hostTick) { try { cur.def.hostTick(cur.ctx); } catch (e) { console.error(e); } } }, 50);
+
+$('#hudMenu').addEventListener('click', () => {
+  if (!cur) return;
+  const def = cur.def;
+  const body = h('div', { class: 'stack' },
+    h('div', { class: 'stack rules', html: def.rules }),
+    isHost ? h('button', { class: 'btn wide danger', type: 'button', onclick: async () => { if (await ask('このゲームを中止して待合室にもどる？', { ok: '中止する', danger: true })) { $$('.modal').forEach(m => m.remove()); hostAbort(); } } }, 'ゲームを中止して待合室へ') : null,
+    h('button', { class: 'btn wide ghost js-log', type: 'button', html: LOCK_SVG + ' 通信ログを見る' }),
+    !isHost ? h('button', { class: 'btn wide ghost', type: 'button', onclick: askLeave }, '部屋を出る') : null);
+  sheet(def.title, body);
+});
+
+/* ===== 待合室のボタン ===== */
+const roomLink = () => location.origin + location.pathname + '?openExternalBrowser=1#' + ROOM + '.' + Sec.kb;
+$('#lShareBtn').addEventListener('click', () => shareText('みんなで対戦の部屋だよ。タップして入ってね（グループの外には出さないでね）\n' + roomLink(), $('#lLink')));
+$('#lCopyBtn').addEventListener('click', () => copyText(roomLink(), $('#lLink')));
+$('#readyBtn').addEventListener('click', async () => {
+  const ok = await Motion.request();
+  if (!ok) toast('センサーが使えなかった。ボタンで遊ぶゲームには参加できるよ', 3500);
+  if (isHost) { S.ready[me.id] = ok ? 2 : 1; publishState(); }
+  else { pub('up', { k: 'ready', f: me.id, motion: ok }, { qos: 1 }); if (S) { S.ready[me.id] = ok ? 2 : 1; renderLobby(); } }
+  Sound.pop();
+});
+$('#startBtn').addEventListener('click', () => { if (isHost) hostStartGame(S.sel); });
+$('#againBtn').addEventListener('click', () => { if (isHost && S.last) hostStartGame(S.last.game); });
+$('#toLobbyBtn').addEventListener('click', () => { if (!isHost) return; S.phase = 'lobby'; S.last = null; publishState(); });
+$('#resetPts').addEventListener('click', async () => { if (isHost && await ask('総合ポイントを全員0にもどす？', { ok: 'リセット', danger: true })) { S.pts = {}; publishState(); } });
+async function askLeave() {
+  if (!(await ask(isHost ? '部屋を閉じる？サーバーに残っている分も全部消えて、みんなも部屋から出るよ' : '部屋を出る？', { ok: isHost ? '閉じる' : '出る', danger: isHost }))) return;
+  $$('.modal').forEach(m => m.remove());
+  leaveRoom();
+}
+$('#closeBtn').addEventListener('click', askLeave);
+$('#leaveBtn').addEventListener('click', askLeave);
+$('#backBtn').addEventListener('click', e => { if (client) { e.preventDefault(); toast('先に「部屋を出る」を押してね'); } });
+
+/* ===== 部屋を作る・入る・出る ===== */
+async function createRoom() {
+  const name = $('#cName').value.trim();
+  if (!name) { toast('名前を入れてね'); $('#cName').focus(); return; }
+  me.name = name.slice(0, 10); saveMe();
+  const st = $('#createStatus'); st.className = 'status'; st.textContent = 'つないでるよ…';
+  $('#createBtn').disabled = true;
+  me.id = randomId(8);
+  try { await Sec.use(Sec.newKey()); } catch (e) { st.className = 'status ng'; st.textContent = 'このブラウザでは暗号化が使えない。Safariを最新にしてね'; $('#createBtn').disabled = false; return; }
+  for (const b of BROKERS) {
+    try { client = await connectTo(b.url); ROOM = randomId(4) + b.id.toUpperCase(); BROKER = b.url; break; } catch (e) { client = null; }
+  }
+  $('#createBtn').disabled = false;
+  if (!client) { st.className = 'status ng'; st.textContent = 'つながらなかった。電波を確認してもう一度ためしてね'; Sec.reset(); return; }
+  isHost = true;
+  S = newState();
+  store.set('tabi.party.session', { room: ROOM, key: Sec.kb, pid: me.id, at: Date.now() });
+  setupClient(); announce(); publishState(); Clock.start();
+  Sound.fanfare();
+}
+const parseRoomLink = text => {
+  const m = String(text || '').match(/(?:#|^|\s)([A-Za-z0-9]{5})\.([A-Za-z0-9_-]{43})(?![A-Za-z0-9_-])/);
+  return m ? { room: m[1].toUpperCase(), key: m[2] } : null;
+};
+let joinTarget = null;
+function openJoin(target) {
+  joinTarget = target;
+  $('#jRoomBox').hidden = !target; $('#jLinkField').hidden = !!target;
+  if (target) $('#jRoom').textContent = target.room;
+  $('#jLink').value = ''; $('#jName').value = me.name;
+  $('#joinStatus').className = 'status'; $('#joinStatus').textContent = '';
+  show('sJoin');
+}
+async function joinRoom(target, name, pid) {
+  const st = $('#joinStatus');
+  const b = target && BROKERS.find(x => x.id.toUpperCase() === target.room[4]);
+  if (!b) { toast('リンクがちがうみたい。幹事にもう一度送ってもらってね'); return false; }
+  try { await Sec.use(target.key); } catch (e) { toast('リンクがこわれてるみたい。幹事にもう一度送ってもらってね'); return false; }
+  me.name = (name || me.name).slice(0, 10); saveMe();
+  me.id = pid || randomId(8);
+  st.className = 'status'; st.textContent = 'つないでるよ…';
+  $('#joinBtn').disabled = true;
+  try { client = await connectTo(b.url); } catch (e) { client = null; }
+  $('#joinBtn').disabled = false;
+  if (!client) { st.className = 'status ng'; st.textContent = 'つながらなかった。電波を確認してもう一度ためしてね'; Sec.reset(); return false; }
+  ROOM = target.room; BROKER = b.url; isHost = false;
+  store.set('tabi.party.session', { room: ROOM, key: Sec.kb, pid: me.id, at: Date.now() });
+  setupClient(); announce();
+  st.textContent = '部屋をさがしてるよ…';
+  setTimeout(async () => {
+    if (S || !client) return;
+    st.className = 'status ng'; st.textContent = '部屋が見つからない。幹事のスマホの画面がついてるか、リンクが最新か確認してね';
+    pub('p/' + me.id, null, { retain: true, qos: 1 });
+    await flushTx(); if (!S) forgetRoom();
+  }, 6000);
+  return true;
+}
+function forgetRoom() {
+  store.del('tabi.party.session'); store.del('tabi.party.hoststate');
+  unmountGame();
+  try { client && client.end(true); } catch (e) {}
+  client = null; S = null; isHost = false; closing = false; clearTimeout(goneTimer); Sec.reset(); Clock.stop(); net(false); Wake.off();
+}
+async function leaveRoom() {
+  closing = true;
+  if (isHost && S) {
+    pub('state', { v: 1, closed: true }, { qos: 1 });
+    pub('state', null, { retain: true, qos: 1 });
+    S.players.forEach(p => { if (p.id !== me.id) pub('p/' + p.id, null, { retain: true, qos: 1 }); });
+  } else pub('p/' + me.id, { id: me.id, name: me.name, leave: true }, { qos: 1 });
+  pub('p/' + me.id, null, { retain: true, qos: 1 });
+  await flushTx();
+  forgetRoom();
+  location.replace(location.pathname + location.search);   // 読み直して、メモリの記録も消す
+}
+function roomClosed() { toast('幹事が部屋を閉じたよ。サーバーに残ってた分も消えた', 3500); forgetRoom(); home(); }
+$('#createBtn').addEventListener('click', createRoom);
+$('#joinBtn').addEventListener('click', () => {
+  const target = joinTarget || parseRoomLink($('#jLink').value);
+  if (!target) { toast('幹事から届いたリンクを貼ってね', 3000); $('#jLink').focus(); return; }
+  const name = $('#jName').value.trim();
+  if (!name) { toast('名前を入れてね'); $('#jName').focus(); return; }
+  joinRoom(target, name);
+});
+$('#goCreate').addEventListener('click', () => { if (inFrame) { toast('claude.ai の中では使えない。Safariで開いてね', 3500); return; } $('#cName').value = me.name; show('sCreate'); });
+$('#goJoin').addEventListener('click', () => { if (inFrame) { toast('claude.ai の中では使えない。Safariで開いてね', 3500); return; } openJoin(null); });
+$('#resumeBtn').addEventListener('click', async () => {
+  const ses = store.get('tabi.party.session', null); if (!ses || !ses.key) return;
+  const hs = store.get('tabi.party.hoststate', null);
+  if (hs && hs.room === ses.room && hs.S && hs.S.host === ses.pid) {
+    const b = BROKERS.find(x => x.id.toUpperCase() === ses.room[4]);
+    try { await Sec.use(ses.key); client = await connectTo(b.url); } catch (e) { client = null; Sec.reset(); toast('つながらなかった'); return; }
+    me.id = ses.pid; ROOM = ses.room; BROKER = b.url; isHost = true; S = hs.S;
+    if (S.phase === 'play') { S.phase = 'lobby'; S.g = null; toast('ゲームの途中だったから、待合室にもどしたよ', 3000); }
+    setupClient(); announce(); publishState(); Clock.start();
+  } else { const t = { room: ses.room, key: ses.key }; openJoin(t); if (me.name) joinRoom(t, me.name, ses.pid); }
+});
+$$('[data-home]').forEach(b => b.addEventListener('click', home));
+function home() {
+  let ses = store.get('tabi.party.session', null);
+  if (ses && (!ses.key || !ses.pid || Date.now() - (ses.at || 0) > 24 * 3600 * 1000)) { store.del('tabi.party.session'); store.del('tabi.party.hoststate'); ses = null; }
+  $('#resumeBox').hidden = !ses;
+  if (ses) $('#resumeText').textContent = '部屋 ' + ses.room + ' に入ってたよ（スマホを閉じた時など）';
+  $('#frameNotice').hidden = !inFrame;
+  const hg = $('#homeGames'); hg.textContent = '';
+  ORDER.forEach(id => hg.append(gameCard(id, { onclick: () => sheet(GAMES[id].title + 'の遊び方', h('div', { class: 'stack', html: GAMES[id].rules })) })));
+  show('sHome');
+}
+$('#helpBtn').addEventListener('click', () => sheet('みんなで対戦の遊び方', h('div', { class: 'stack', html: `
+<h3>準備</h3>
+<ol>
+<li>幹事が「部屋を作る」。出てきたリンクをLINEのグループに送る。</li>
+<li>みんなはリンクをタップして、名前（あだ名でOK）を入れて「入る」。</li>
+<li>全員「センサーをオンにして準備OK」を押す。iPhoneが許可を聞いてくるので「許可」。</li>
+<li>幹事がゲームをえらんで「スタート」。終わったら、そのまま次のゲームへ。</li>
+</ol>
+<h3>総合ポイント</h3>
+<ul><li>ゲームの順位で 1位10pt・2位7pt・3位5pt・4位3pt・それ以下1pt（チーム戦は勝ったチームに多め）。全部のゲームの合計で総合優勝を決めよう。</li></ul>
+<h3>安全のしくみ</h3>
+<ul>
+<li>名前・操作・動きは、全部スマホの中で暗号化してから送る（AES-GCM 256bit）。鍵は部屋のリンクの「#」より後ろにだけある。</li>
+<li>中継サーバーや、のぞき見した人に見えるのは意味のない文字の並びだけ。</li>
+<li>幹事が「部屋を閉じる」と、サーバーに残っている分も消える。閉じ忘れても12時間で自動で消える。</li>
+<li>何を送って何を受け取ったかは、鍵のマークの「通信ログ」で見られる。記録はそのスマホの中だけ。</li>
+</ul>
+<h3>注意</h3>
+<ul>
+<li>通信が必要。宿のWi-Fiでつながらない時は、モバイルデータ（4G/5G）にすると直ることが多い。</li>
+<li>幹事のスマホが進行役。幹事は画面をつけたままにしてね。</li>
+<li>待合室に出る秒数は、幹事のスマホまでの通信の往復時間。0.3秒以下なら快適に遊べる。</li>
+</ul>` })));
+</script>
+<script src="party/tug.js"></script>
+<script src="party/darts.js"></script>
+<script src="party/bomb.js"></script>
+<script src="party/daruma.js"></script>
+<script>
+/* 起動：リンクに部屋の番号がついていたら、そのまま参加画面へ */
+function fromLink(first) {
+  const hash = location.hash || '';
+  if (hash.length > 1) { try { history.replaceState(null, '', location.pathname + location.search); } catch (e) {} }
+  const t = parseRoomLink(hash);
+  if (t && !inFrame && !client) { openJoin(t); if (me.name) $('#jName').focus(); return; }
+  if (first) home();
+}
+window.addEventListener('hashchange', () => fromLink(false));
+fromLink(true);
+</script>
+</body>
+</html>
